@@ -39,13 +39,17 @@ class ServerBase {
 
         RegistrationCenter user_resource;
         RegistrationCenter vogro_resource;
+        
         std::function<void(vogro::Response&, vogro::Request&)> default_error_handler;
         std::unordered_map<unsigned long,std::function<void(vogro::Response&, vogro::Request&)>> error_handlers;
+
+        vogro_logger_ns::Logger<vogro_logger_ns::TerminalPolicy> vogro_logger= vogro_logger_ns::Logger<vogro_logger_ns::TerminalPolicy>::getLoggerInstance("vogro.log");
 
         virtual void accept() {}
     
     public:
-        vogro_logger_ns::Logger<vogro_logger_ns::FilePolicy> vogro_logger=vogro_logger_ns::Logger<vogro_logger_ns::FilePolicy>::getLoggerInstance("vogro.log");
+        
+        
         
         ServerBase(unsigned short port, size_t num_threads) :
             endpoint(boost::asio::ip::tcp::v4(), port),
@@ -184,12 +188,18 @@ class ServerBase {
                                 const boost::system::error_code& ec,
                                  size_t bytes_transferred) {
                             
-                            //print log  
-                            //here add a template
-                            vogro_logger.template PrintLog<vogro_logger_ns::severity_type::info>(request->getMethod(),
+                            // const_cast < Student&>(constObj)
+                            vogro_logger.PrintLog<vogro_logger_ns::severity_type::info>(request->getMethod(),
                                request->getPath(),
-                                response.getCode());
-
+                               response.getCode());
+                            // print log  
+                            // here add a template
+                            // vogro_logger.template PrintLog<vogro_logger_ns::severity_type::info>(
+                            //     request->getMethod(),
+                            //    request->getPath(),
+                            //     response.getCode());
+                    
+                            
                             if(!ec && std::stof(request->getVersion())>1.05)
                                 process_request_and_respond(socket);
                         });
@@ -209,11 +219,10 @@ class ServerBase {
                             if(!ec && std::stof(request->getVersion())>1.05)
                                 process_request_and_respond(socket);
                         });
-
                         // print log
-                        vogro_logger.template PrintLog<vogro_logger_ns::severity_type::info>(request->getMethod(),
-                               request->getPath(),
-                               response.getCode());
+                        // vogro_logger.template PrintLog<vogro_logger_ns::severity_type::info>(request->getMethod(),
+                        //        request->getPath(),
+                        //        response.getCode());
 
                     return;
                 }
@@ -236,10 +245,10 @@ class ServerBase {
                             return ;
                         });
 
-                 // print log
-                vogro_logger.template PrintLog<vogro_logger_ns::severity_type::info>(request->getMethod(),
-                        request->getPath(),
-                        response.getCode());
+                //  // print log
+                // vogro_logger.template PrintLog<vogro_logger_ns::severity_type::info>(request->getMethod(),
+                //         request->getPath(),
+                //         response.getCode());
                 return;
         }
 

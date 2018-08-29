@@ -1,9 +1,13 @@
 /************************************************************************ 
- * Copyright (c) 2018- , anderwpqc|Andrewpqc <andrewpqc@mails.ccnu.edu> *
+ * Copyright (c) 2018- , Andrewpqc <andrewpqc@mails.ccnu.edu>           *
  * All rights reserved.                                                 * 
  *                                                                      *
- * Apache License, Version 2.0. See http://www.apache.org/licenses/     *
+ * Apache License, Version 2.0                                          *
+ * See http://www.apache.org/licenses/ for terms and contions for use,  *
+ * reproduction, and distribution.                                      *
+ *                                                                      *
  ************************************************************************/
+
 
 #ifndef __LOGGER_HPP__
 #define __LOGGER_HPP__
@@ -46,7 +50,7 @@ class Logger {
 
     // template<typename...Args>
     template <severity_type severity, typename... Args>
-    void PrintLog(Args& ... args) {
+    void PrintLog(const Args ... args){
         // init p and ssp only once
         if (!p) {
             p = std::shared_ptr<policy_type>(new policy_type(this->filename_or_addr));
@@ -116,6 +120,8 @@ class Logger {
         (*ssp) << parm1 << " ";
         print_impl(parm...);
     }
+
+    // logger(){}
 
     Logger(std::string &f) {
         this->filename_or_addr = f;
