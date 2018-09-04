@@ -59,7 +59,7 @@ public:
     for (auto it = vogro_resource.begin(); it != vogro_resource.end(); it++) {
       all_resources.push_back(it);
     }
-
+    logger.LOG_INFO("vogro server is linstening on port:",12345);
     accept();
 
     // n-1 thread pool

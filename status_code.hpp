@@ -160,11 +160,13 @@ private:
         codePhrase[510] = "Not Extended";
         codePhrase[511] = "Network Authentication Required";
     }
-	// StatusCodeMap(const StatusCodeMap &); //这种方法赋值构造函数不能被屏蔽
-	StatusCodeMap & operator = (const StatusCodeMap &);
+	
 
     std::unordered_map<unsigned long, std::string> codePhrase;
 public:
+    StatusCodeMap(const StatusCodeMap &)=delete;
+	StatusCodeMap & operator = (const StatusCodeMap &)=delete;
+
     std::string getPharseByCode(unsigned long code){
         std::unordered_map<unsigned long,std::string>::const_iterator got=codePhrase.find(code);
         if(got==codePhrase.end()){

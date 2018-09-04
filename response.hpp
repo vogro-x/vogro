@@ -58,7 +58,7 @@ class Response {
 
     void setCode(int code) {
         this->code = code;
-        auto codeMap =vogro::StatusCodeMap::GetInstance();
+        vogro::StatusCodeMap& codeMap =vogro::StatusCodeMap::GetInstance();
         this->phrase = codeMap.getPharseByCode(code);
     }
 
