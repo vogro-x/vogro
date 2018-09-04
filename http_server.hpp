@@ -18,7 +18,7 @@ namespace vogro {
 
             default_error_handler = [](vogro::Response& response, vogro::Request& request){
                 auto code = response.getCode();
-                auto codeMap = vogro::StatusCodeMap::GetInstance();
+                vogro::StatusCodeMap& codeMap = vogro::StatusCodeMap::GetInstance();
                 auto pharse = codeMap.getPharseByCode(code);
                 std::stringstream ss;
                 ss << "<center><h1>"<<code<<" "<<pharse<<"</h1><br/>";
@@ -30,7 +30,7 @@ namespace vogro {
         }
     private:
         void accept() {
-            std::cout<<"accept"<<std::endl;
+            // std::cout<<"accept"<<std::endl;
             auto socket = std::make_shared<HTTP>(io_svc);
             acceptor.async_accept(*socket, [this, socket](const boost::system::error_code& ec) {
                 accept();//递归调用accept
