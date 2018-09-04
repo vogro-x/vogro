@@ -44,13 +44,13 @@ public:
     this->open_ostream();
   }
 
-  void open_ostream() {
+  void open_ostream() override {
     this->out_stream->open(filename, std::ofstream::out | std::ofstream::app);
   }
 
-  void close_ostream() { this->out_stream->close(); }
+  void close_ostream() override { this->out_stream->close(); }
 
-  void write(const std::string &msg) {
+  void write(const std::string &msg) override {
     *(this->out_stream) << msg << std::endl;
   }
   ~FilePolicy() { this->close_ostream(); }
@@ -61,15 +61,15 @@ public:
   // placehold 保持接口一致
   TerminalPolicy(std::string &placehold){};
 
-  void open_ostream() {
+  void open_ostream() override {
     // do nothing
   }
 
-  void close_ostream() {
+  void close_ostream() override {
     // do nothing
   }
 
-  void write(const std::string &msg) { std::cout << msg << std::endl; }
+  void write(const std::string &msg) override { std::cout << msg << std::endl; }
 };
 
 // remaining impl
@@ -89,15 +89,15 @@ public:
 
   ~RemotePolicy() { this->close_ostream(); }
 
-  void open_ostream() {
+  void open_ostream() override {
     // do nothing
   }
 
-  void close_ostream() {
+  void close_ostream() override {
     // do nothing
   }
 
-  void write(const std::string &msg) {}
+  void write(const std::string &msg) override {}
 };
 
 // color mocro
