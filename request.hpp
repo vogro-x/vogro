@@ -3,8 +3,8 @@
 
 #include <iostream>
 #include <map>
-#include <sstream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 
@@ -85,46 +85,35 @@ public:
 
   std::string getMethod() { return this->method; }
 
-  void setMethod(std::string mhd) { this->method = mhd; }
+  void setMethod(const std::string &mhd) { this->method = mhd; }
 
   std::string getPath() { return this->path; }
 
-  void setPath(std::string ph) { this->path = ph; }
+  void setPath(const std::string &ph) { this->path = ph; }
 
   std::string getVersion() { return this->version; }
 
-  void setVersion(std::string vsn) { this->version = vsn; }
+  void setVersion(const std::string &vsn) { this->version = vsn; }
 
   std::string getHost() { return this->host; }
 
-  void setHost(std::string hst) { this->host = hst; }
+  void setHost(const std::string &hst) { this->host = hst; }
 
   std::string getRemoteIP() { return this->remote_ip; }
 
-  void setRemoteIP(std::string r_ip) { this->remote_ip = r_ip; }
+  void setRemoteIP(const std::string &r_ip) { this->remote_ip = r_ip; }
 
   unsigned short getRemotePort() { return this->remote_port; }
 
-  void setRemotePort(unsigned short port) { this->remote_port = port; }
+  void setRemotePort(const unsigned short port) { this->remote_port = port; }
 
   std::string getProtocol() { return this->protocol; }
 
-  void setProtocol(std::string protoc) { this->protocol = protoc; }
-
-  // std::shared_ptr<std::istream> getContent(){
-  //     return this->content;
-  // }
-
-  // void setContent(std::shared_ptr<std::istream> p){
-  //     this->content = p;
-  // }
+  void setProtocol(const std::string &protoc) { this->protocol = protoc; }
 
   std::string getHeader(std::string key) {
     auto got = this->headers.find(key);
-    if (got == this->headers.end()) {
-      return "";
-    }
-    return got->second;
+    return (got == this->headers.end()) ? "" : got->second;
   }
 
   std::unordered_map<std::string, std::string> getHeaders() {
@@ -139,10 +128,7 @@ public:
 
   std::string getPathParam(std::string key) {
     auto got = this->pathParam.find(key);
-    if (got == this->pathParam.end()) {
-      return "";
-    }
-    return got->second;
+    return (got == this->pathParam.end()) ? "" : got->second;
   }
 
   void setQueryParam(std::string queryString) {
@@ -151,10 +137,7 @@ public:
 
   std::string getQueryParam(std::string key) {
     auto got = this->queryParam.find(key);
-    if (got == this->queryParam.end()) {
-      return "";
-    }
-    return got->second;
+    return (got == this->queryParam.end()) ? "" : got->second;
   }
 
   void setFormParam(std::string formData) {
@@ -163,19 +146,14 @@ public:
 
   std::string getFormParam(std::string key) {
     auto got = this->formParam.find(key);
-    if (got == this->formParam.end()) {
-      return "";
-    }
-    return got->second;
+    return (got == this->formParam.end()) ? "" : got->second;
   }
 
   void ReadJSON(std::shared_ptr<std::istream> jsonPtr) {
     pt::read_json(*jsonPtr, jsonTree);
   }
 
-  const pt::ptree& GetJsonTree(){
-      return this->jsonTree;
-  }
+  const pt::ptree &GetJsonTree() { return this->jsonTree; }
 };
 
 } // namespace vogro

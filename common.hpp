@@ -2,7 +2,6 @@
 #include <cstdio>
 #include <map>
 
-#define __VOGRO_VERSION__ "0.1";
 
 //color mocro
 // #define	CLEARSCREEN() printf("\033[H\033[2J")
@@ -15,6 +14,7 @@
 
 #ifndef __COMMON_HPP__
 #define __COMMON_HPP__ 
+const std::string __VOGRO_VERSION__ { "0.1" };
 
 
 std::string ltrim(std::string str) {

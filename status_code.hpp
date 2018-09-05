@@ -169,11 +169,7 @@ public:
 
     std::string getPharseByCode(unsigned long code){
         std::unordered_map<unsigned long,std::string>::const_iterator got=codePhrase.find(code);
-        if(got==codePhrase.end()){
-            return "";// not found
-        }else{
-            return got->second;
-        }
+        return (got == codePhrase.end()) ? "" : got->second;
     }
 
 	static StatusCodeMap& GetInstance(){
