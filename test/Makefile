@@ -59,8 +59,11 @@ trim:
 log:
 	g++ log_test.cpp ../log.hpp -std=c++11 -o log
 	./log
+
+mime:
+	g++ mime_type_test.cpp ../mime_type.hpp -std=c++11 -o mime
+	./mime 
 	
 clean:
-	rm split request regex urlMatch response code 
-	rm parse_request_line  parse_header a.out *.o *.gch
-	rm color trim
+	rm split request regex urlMatch response code parse_request_line  parse_header a.out *.o *.gch color trim mime
+	
