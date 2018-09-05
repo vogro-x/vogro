@@ -1,208 +1,183 @@
 #ifndef __REQUEST_HPP__
 #define __REQUEST_HPP__
 
-#include <map>
 #include <iostream>
+#include <map>
+#include <sstream>
+#include <memory>
 #include <string>
 #include <unordered_map>
-#include <memory>
 
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+
+namespace pt = boost::property_tree;
 
 namespace vogro {
 
-    class Request {
-        private:  
-        std::string method;
-    
-        std::string path;
+class Request {
+private:
+  std::string method;
 
-        // 1.1,1.0,2.0
-        std::string version;
+  std::string path;
 
-        std::string host;
+  // 1.1,1.0,2.0
+  std::string version;
 
-        std::string remote_ip;
+  std::string host;
 
-        unsigned short remote_port;
+  std::string remote_ip;
 
-        // http or https
-        std::string protocol; 
+  unsigned short remote_port;
 
-        // the request body
-        std::shared_ptr<std::istream> content;
-        
-        // request haeaders are stored in an unordered_map
-        std::unordered_map<std::string, std::string> headers;
-        
-        
+  // http or https
+  std::string protocol;
 
+  // the request body
+  // std::shared_ptr<std::istream> content;
+  pt::ptree jsonTree;
 
-        // the parameters in the url query string(urlencoded)
-        std::map<std::string,std::string> queryParam;
+  // request haeaders are stored in an unordered_map
+  std::unordered_map<std::string, std::string> headers;
 
-        // the parameters in the form data(POST, urlencodeed)
-        std::map<std::string,std::string> formParam;  
+  // the parameters in the url query string(urlencoded)
+  std::map<std::string, std::string> queryParam;
 
-        // splitQueryString devide query string such as "id=123&name=andrew" into key value pair 
-        // and store them into storeMap
-        void splitQueryString(std::string queryString,std::map<std::string,std::string>& storeMap){
-            std::string key="";
-            std::string val="";
-            auto flag=true;
-            for(auto i=0;i<=queryString.length();i++){
-                if(i==queryString.length()||queryString[i]=='&'){
-                    flag=true;
+  // the parameters in the form data(POST, urlencodeed)
+  std::map<std::string, std::string> formParam;
 
-                    storeMap[key]=val;
+  // splitQueryString devide query string such as "id=123&name=andrew" into key
+  // value pair and store them into storeMap
+  void splitQueryString(std::string queryString,
+                        std::map<std::string, std::string> &storeMap) {
+    std::string key = "";
+    std::string val = "";
+    auto flag = true;
+    for (auto i = 0; i <= queryString.length(); i++) {
+      if (i == queryString.length() || queryString[i] == '&') {
+        flag = true;
 
-                    key.clear();
-                    val.clear();
+        storeMap[key] = val;
 
-                    continue;
+        key.clear();
+        val.clear();
 
-                } else if (queryString[i]=='='){
+        continue;
 
-                    flag=false;
-                    
-                    continue;
-                }
+      } else if (queryString[i] == '=') {
 
-                if(flag){
-                    key+=queryString[i];
-                }else{
-                    val+=queryString[i];
-                }
-            } 
-        }
+        flag = false;
 
-        public:
-        // the parameters in path
-        std::map<std::string,std::string> pathParam;
+        continue;
+      }
 
-        std::string getMethod(){
-            return this->method;
-        }
-        
-        void setMethod(std::string mhd){
-            this->method=mhd;
-        }
+      if (flag) {
+        key += queryString[i];
+      } else {
+        val += queryString[i];
+      }
+    }
+  }
 
-        std::string getPath(){
-            return this->path;
-        }
+public:
+  // the parameters in path
+  std::map<std::string, std::string> pathParam;
 
-        void setPath(std::string ph){
-            this->path=ph;
-        }
+  std::string getMethod() { return this->method; }
 
-        std::string getVersion(){
-            return this->version;
-        }
+  void setMethod(std::string mhd) { this->method = mhd; }
 
-        void setVersion(std::string vsn){
-            this->version=vsn;
-        }
+  std::string getPath() { return this->path; }
 
-        std::string getHost(){
-            return this->host;
-        }
+  void setPath(std::string ph) { this->path = ph; }
 
-        void setHost(std::string hst){
-            this->host=hst;
-        }
+  std::string getVersion() { return this->version; }
 
-        std::string getRemoteIP(){
-            return this->remote_ip;
-        }
+  void setVersion(std::string vsn) { this->version = vsn; }
 
-        void setRemoteIP(std::string r_ip){
-            this->remote_ip = r_ip;
-        }
+  std::string getHost() { return this->host; }
 
-        unsigned short getRemotePort(){
-            return this->remote_port;
-        }
+  void setHost(std::string hst) { this->host = hst; }
 
-        void setRemotePort(unsigned short port){
-            this->remote_port=port;
-        }
+  std::string getRemoteIP() { return this->remote_ip; }
 
-        std::string getProtocol(){
-            return this->protocol;
-        }
+  void setRemoteIP(std::string r_ip) { this->remote_ip = r_ip; }
 
-        void setProtocol(std::string protoc){
-            this->protocol= protoc;
-        }
-        
-        std::shared_ptr<std::istream> getContent(){
-            return this->content;
-        }
+  unsigned short getRemotePort() { return this->remote_port; }
 
-        void setContent(std::shared_ptr<std::istream> p){
-            this->content = p;
-        }
+  void setRemotePort(unsigned short port) { this->remote_port = port; }
 
-        std::string getHeader(std::string key){
-            auto got = this->headers.find(key);
-            if (got == this->headers.end()){
-                return "";
-            }
-            return got->second;
-        }
+  std::string getProtocol() { return this->protocol; }
 
-        std::unordered_map<std::string, std::string> getHeaders(){
-            return this->headers;
-        }
+  void setProtocol(std::string protoc) { this->protocol = protoc; }
 
-        void addHeader(std::string key,std::string val){
-            this->headers[key]=val;
-        }
+  // std::shared_ptr<std::istream> getContent(){
+  //     return this->content;
+  // }
 
-        void addPathParam(std::string key,std::string val){
-            this->pathParam[key]=val;
-        }
+  // void setContent(std::shared_ptr<std::istream> p){
+  //     this->content = p;
+  // }
 
-        std::string getPathParam(std::string key){
-            auto got = this->pathParam.find(key);
-            if (got==this->pathParam.end()){
-                return "";
-            }
-            return got->second;
-        }
+  std::string getHeader(std::string key) {
+    auto got = this->headers.find(key);
+    if (got == this->headers.end()) {
+      return "";
+    }
+    return got->second;
+  }
 
-        void setQueryParam(std::string queryString){
-            this->splitQueryString(queryString,this->queryParam);
-        }
+  std::unordered_map<std::string, std::string> getHeaders() {
+    return this->headers;
+  }
 
-        std::string getQueryParam(std::string key){
-            auto got = this->queryParam.find(key);
-            if (got==this->queryParam.end()){
-                return "";
-            }
-            return got->second;
-        }
+  void addHeader(std::string key, std::string val) { this->headers[key] = val; }
 
-        void setFormParam(std::string formData){
-            this->splitQueryString(formData,this->formParam);   
-        }
-            
+  void addPathParam(std::string key, std::string val) {
+    this->pathParam[key] = val;
+  }
 
-        std::string getFormParam(std::string key){
-            auto got = this->formParam.find(key);
-            if (got == this->formParam.end()){
-                return "";
-            }
-            return got->second;
-        }
+  std::string getPathParam(std::string key) {
+    auto got = this->pathParam.find(key);
+    if (got == this->pathParam.end()) {
+      return "";
+    }
+    return got->second;
+  }
 
-        // void ReadJSON();
-    };
+  void setQueryParam(std::string queryString) {
+    this->splitQueryString(queryString, this->queryParam);
+  }
 
+  std::string getQueryParam(std::string key) {
+    auto got = this->queryParam.find(key);
+    if (got == this->queryParam.end()) {
+      return "";
+    }
+    return got->second;
+  }
 
-}
+  void setFormParam(std::string formData) {
+    this->splitQueryString(formData, this->formParam);
+  }
 
+  std::string getFormParam(std::string key) {
+    auto got = this->formParam.find(key);
+    if (got == this->formParam.end()) {
+      return "";
+    }
+    return got->second;
+  }
 
+  void ReadJSON(std::shared_ptr<std::istream> jsonPtr) {
+    pt::read_json(*jsonPtr, jsonTree);
+  }
 
+  const pt::ptree& GetJsonTree(){
+      return this->jsonTree;
+  }
+};
+
+} // namespace vogro
 
 #endif

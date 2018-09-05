@@ -3,15 +3,53 @@
 int main() {
   vogro::Server server(12345, 4);
   
-  server.addRoute("/", "GET",[](vogro::Response &response, vogro::Request &request) {
-            response.addBody("ff");
-            return;
-        });
+  server.addRoute("/", "GET",
+    [](vogro::Response &response, vogro::Request &request) {
+      response.addBody("<h1>Index Page</h1>");
+      return;
+  });
 
-  server.customErrorHandler(404, [](vogro::Response &response, vogro::Request &request) {
-            response.addBody("not found ....");
-            return;
-      });
+  server.addRoute("/username/{str:name}/","GET",
+    [](vogro::Response &response, vogro::Request &request) {
+      auto name = request.getPathParam("name");
+      response.addBody(name);
+      return ;
+  });
+
+  server.addRoute("/course/{str:coursename}/user/{int:id}/","GET",
+    [](vogro::Response &response, vogro::Request &request) {
+      auto coursename = request.getPathParam("coursename");
+      auto id = request.getPathParam("id");
+      response.addBody("coursename:"+coursename+",id: "+id);
+      return;
+  });
+
+  /**************************************************
+  此处请求的时候一定要有Content-Length头部，后面这里需要改进
+  示例请求
+  
+  POST /a/post/ HTTP/1.1
+  Host: 127.0.0.1:12345
+  Content-Type: application/json
+  Content-Length: 20
+  Cache-Control: no-cache
+  Postman-Token: c8810efa-1872-fb0c-978f-c365b14af5f5
+
+  {"name":"andrewpqc"}
+  ****************************************************/
+  server.addRoute("/a/post/","POST",
+    [](vogro::Response &response, vogro::Request &request) {
+      auto json = request.GetJsonTree();
+      auto name =json.get<std::string>("name");
+      response.addBody(name);
+      return ;
+    });
+
+  server.customErrorHandler(404, 
+    [](vogro::Response &response, vogro::Request &request) {
+      response.addBody("<h1>Custom Not Found</h1>");
+      return;
+    });
 
   server.runServer();
   return 0;

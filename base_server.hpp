@@ -2,6 +2,7 @@
 #define _BASE_SERVER_HPP_
 
 #include <boost/asio.hpp>
+
 #include <iostream>
 #include <regex>
 #include <string>
@@ -91,7 +92,7 @@ public:
             *request = parse_request(stream);
 
             size_t num_additional_bytes = total - bytes_transferred;
-
+            std::cout<<request->getHeader("Content-Length")<<std::endl;
             if (request->getHeader("Content-Length") != "") {
               boost::asio::async_read(
                   *socket, *read_buffer,
@@ -103,8 +104,9 @@ public:
                             size_t bytes_transferred) {
                     if (!ec) {
                       // 将指针作为 istream 对象存储到 read_buffer 中
-                      request->setContent(std::shared_ptr<std::istream>(
+                      request->ReadJSON(std::shared_ptr<std::istream>(
                           new std::istream(read_buffer.get())));
+                      
                       respond(socket, request);
                     }
                   });
@@ -227,8 +229,7 @@ public:
     return;
   }
 
-  void
-  addRoute(std::string userPath, std::string method,
+  void addRoute(std::string userPath, std::string method,
            std::function<void(vogro::Response &, vogro::Request &)> handler) {
     this->user_resource[userPath][method] = handler;
   }
