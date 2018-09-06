@@ -3,18 +3,10 @@
 #include <map>
 
 
-//color mocro
-// #define	CLEARSCREEN() printf("\033[H\033[2J")
-// #define	INITCOLOR(color) printf("\033[%sm", color)
-// #define	RED_COLOR "31"
-// #define	GREEN_COLOR	"32"
-// #define	YELLOW_COLOR "33"
-// #define	BLUE_COLOR "34"
-// #define	ZERO_COLOR "0"
 
 #ifndef __COMMON_HPP__
 #define __COMMON_HPP__ 
-const std::string __VOGRO_VERSION__ { "0.1" };
+#define __VOGRO_VERSION__ "0.1" ;
 
 
 std::string ltrim(std::string str) {

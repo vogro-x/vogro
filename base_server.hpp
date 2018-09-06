@@ -39,7 +39,7 @@ protected:
 
   std::function<void(vogro::Response &, vogro::Request &)>
       default_error_handler;
-  std::unordered_map<unsigned long,
+  std::unordered_map<unsigned short,
                      std::function<void(vogro::Response &, vogro::Request &)>>
       error_handlers;
 
@@ -92,7 +92,6 @@ public:
             *request = parse_request(stream);
 
             size_t num_additional_bytes = total - bytes_transferred;
-            std::cout<<request->getHeader("Content-Length")<<std::endl;
             if (request->getHeader("Content-Length") != "") {
               boost::asio::async_read(
                   *socket, *read_buffer,
@@ -177,6 +176,7 @@ public:
               [this, socket, request, write_buffer,
                &response](const boost::system::error_code &ec,
                           size_t bytes_transferred) {
+
                 logger.LOG_INFO(request->getMethod(), request->getPath(),
                                 response.getCode());
 
@@ -235,7 +235,7 @@ public:
   }
 
   void customErrorHandler(
-      unsigned long code,
+      unsigned short code,
       std::function<void(vogro::Response &, vogro::Request &)> handler) {
     this->error_handlers[code] = handler;
   }

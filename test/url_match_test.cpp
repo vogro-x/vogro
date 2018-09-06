@@ -6,18 +6,11 @@
 // urlMatch determine if the requested path matches the path that set in the handler, if mached, the possible
 // path parameters will be stored in the storeMap.
 bool urlMatch(std::string requestUrl, std::string handlerUrl, std::map<std::string, std::string> &storeMap) {
-    if (handlerUrl.back() != '/') {
-        handlerUrl += '/';
-    }
+    if (handlerUrl.back() != '/') handlerUrl += '/';
+    if (requestUrl.back() != '/') requestUrl += '/';
 
-    if (requestUrl.back() != '/') {
-        requestUrl += '/';
-    }
-
-    std::string type;
-    std::string name;
+    std::string type, name, dynamicParam;
     auto tempIndex = 0;
-    std::string dynamicParam;
     auto handlerUrlLength=handlerUrl.length();
     auto requestUrlLength=requestUrl.length();
     auto max_length = (handlerUrlLength > requestUrlLength) ? handlerUrlLength : requestUrlLength;
@@ -113,9 +106,16 @@ int main(void) {
     assert(pathParam.at("name") == "andrew");
     pathParam.clear();
     
-    // here is a bug, the test case bellow doesn't work properly.
     std::string reqUrl7 = "/fdg";
     std::string handlerUrl7 = "/";
     assert(urlMatch(reqUrl7, handlerUrl7, pathParam) == false);
+    pathParam.clear();
+
+    // found a bug here.....
+    std::string reqUrl8 = "/username/hjsdfghssdjjjjjj/";
+    std::string handlerUrl8 = "/username/{str:name}/";
+    std::cout<<urlMatch(reqUrl7, handlerUrl7, pathParam)<<std::endl;
+    // std::cout<<pathParam.at("name")<<std::endl;
+    // assert(urlMatch(reqUrl7, handlerUrl7, pathParam)==true);
     return 0;
 }
