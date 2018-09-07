@@ -12,8 +12,8 @@
 
 #include "request.hpp"
 #include "response.hpp"
-#include "vogro_utils.hpp"
 #include "vogro_logger.hpp"
+#include "vogro_utils.hpp"
 
 namespace vogro {
 
@@ -60,7 +60,7 @@ public:
     for (auto it = vogro_resource.begin(); it != vogro_resource.end(); it++) {
       all_resources.push_back(it);
     }
-    logger.LOG_INFO("vogro server is linstening on port:",12345);
+    logger.LOG_INFO("vogro server is linstening on port:", 12345);
     accept();
 
     // n-1 thread pool
@@ -105,7 +105,7 @@ public:
                       // 将指针作为 istream 对象存储到 read_buffer 中
                       request->ReadJSON(std::shared_ptr<std::istream>(
                           new std::istream(read_buffer.get())));
-                      
+
                       respond(socket, request);
                     }
                   });
@@ -162,89 +162,55 @@ public:
     vogro::Response response;
     auto write_buffer = std::make_shared<boost::asio::streambuf>();
     std::ostream responseStream(write_buffer.get());
+    bool matchedOne = false;
     for (auto res_it : all_resources) {
-   /*  pair(a,b)
-    *  if(!a&&!b) not match
-    *  if(a&&!b) a normal match
-    *  if(!a&&b) a match to request static files*/
-      auto matchResult = urlMatch(request->getPath(), res_it->first, request->pathParam);
-      if (!matchResult.first && matchResult.second){
-        //a match to request static files
-      }
-      else if(matchResult.first && !matchResult.second){
-        //a normal match
-      }else{
-        //not match
-      }
-      
-      if (urlMatch(request->getPath(), res_it->first, request->pathParam)) {
+      std::map<std::string, std::string> tempPathParamStoreMap;
+      auto matchResult = urlMatch(request->getPath(), res_it->first, tempPathParamStoreMap);
+      if ((!matchResult.first) && (matchResult.second)) {
+        // ServiceStatic(response, *request)
+        matchedOne = true;
+        break;
+      } else if ((matchResult.first) && (!matchResult.second)) {
         if (res_it->second.count(request->getMethod()) > 0) {
-          // request->pathParam = move(what);
-
-          res_it->second[request->getMethod()](response, *request);
-
-          responseStream << response.makeResponseMsg();
-
-          boost::asio::async_write(
-              *socket, *write_buffer,
-              [this, socket, request, write_buffer,
-               &response](const boost::system::error_code &ec,
-                          size_t bytes_transferred) {
-
-                logger.LOG_INFO(request->getMethod(), request->getPath(),
-                                response.getCode());
-
-                if (!ec && std::stof(request->getVersion()) > 1.05)
-                  process_request_and_respond(socket);
-              });
-          return;
+          request->setPathParam(tempPathParamStoreMap);
+          res_it->second[request->getMethod()](response, *request); // exec handler
+          matchedOne = true;
+          break;
+        } else {
+          response.setCode(405);
+          auto got = error_handlers.find(405);
+          if (got == error_handlers.end()) default_error_handler(response, *request);
+          else got->second(response, *request);
+          matchedOne = true;
+          break;
         }
-        response.setCode(405);
-        auto got = error_handlers.find(405);
-        if (got == error_handlers.end())
-          default_error_handler(response, *request);
-        else
-          got->second(response, *request);
+      } 
+    }
 
-        responseStream << response.makeResponseMsg();
-        boost::asio::async_write(
-            *socket, *write_buffer,
-            [this, socket, request, write_buffer](
-                const boost::system::error_code &ec, size_t bytes_transferred) {
-              if (!ec && std::stof(request->getVersion()) > 1.05)
-                process_request_and_respond(socket);
-            });
-
-        logger.LOG_INFO(request->getMethod(), request->getPath(),
-                        response.getCode());
-        return;
+    if(!matchedOne){
+        response.setCode(404);
+        auto got = error_handlers.find(404);
+        if (got == error_handlers.end()) default_error_handler(response, *request);
+        else got->second(response, *request);
       }
-    }
-    response.setCode(404);
-    auto got = error_handlers.find(404);
-    if (got == error_handlers.end()) {
-      default_error_handler(response, *request);
-    } else {
-      got->second(response, *request);
-    }
+
     responseStream << response.makeResponseMsg();
     boost::asio::async_write(
         *socket, *write_buffer,
-        [this, socket, request, write_buffer](
+        [this, socket, request, write_buffer, &response](
             const boost::system::error_code &ec, size_t bytes_transferred) {
+          logger.LOG_INFO(request->getMethod(), request->getPath(),
+                          response.getCode());
+
           if (!ec && std::stof(request->getVersion()) > 1.05)
             process_request_and_respond(socket);
-          return;
         });
-
-    logger.LOG_INFO(request->getMethod(), request->getPath(),
-                    response.getCode());
-
     return;
   }
 
-  void addRoute(std::string userPath, std::string method,
-           std::function<void(vogro::Response &, vogro::Request &)> handler) {
+  void addRoute(std::string userPath,
+                std::string method,
+                std::function<void(vogro::Response &, vogro::Request &)> handler) {
     this->user_resource[userPath][method] = handler;
   }
 

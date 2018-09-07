@@ -61,6 +61,10 @@ private:
   // the parameters in the form data(POST, urlencodeed)
   std::map<std::string, std::string> formParam;
 
+  // the parameters in path
+  std::map<std::string, std::string> pathParam;
+
+
   // splitQueryString devide query string such as "id=123&name=andrew" into key
   // value pair and store them into storeMap
   void splitQueryString(std::string queryString,
@@ -95,9 +99,7 @@ private:
   }
 
 public:
-  // the parameters in path
-  std::map<std::string, std::string> pathParam;
-
+  
   std::string getMethod() { return this->method; }
 
   void setMethod(const std::string &mhd) { this->method = mhd; }
@@ -137,8 +139,12 @@ public:
 
   void addHeader(std::string key, std::string val) { this->headers[key] = val; }
 
-  void addPathParam(std::string key, std::string val) {
-    this->pathParam[key] = val;
+  // void addPathParam(std::string key, std::string val) {
+  //   this->pathParam[key] = val;
+  // }
+
+  void setPathParam(std::map<std::string, std::string>& pathParam){
+    this->pathParam = pathParam;
   }
 
   std::string getPathParam(std::string key) {
