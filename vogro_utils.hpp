@@ -17,6 +17,7 @@
 #define __VOGRO_UTILS_HPP__
 #include <map>
 #include <string>
+#include <algorithm>
 
 std::string ltrim(std::string str) {
     auto length = str.length();
@@ -180,6 +181,18 @@ std::pair<std::string,std::pair<std::string,std::string>> parse_request_line(std
     // for return three value
     auto url_version_pair=std::make_pair(url,version);
     return std::make_pair(method,url_version_pair); 
+}
+
+
+std::string getFileExtension(std::string path) {
+    auto pos = path.find_last_of('.');
+    std::string ext = path.substr(pos+1);
+    std::transform(ext.begin(), ext.end(), ext.begin(), 
+        [](char in) ->char{
+            if(in <= 'Z' && in >= 'A') return in - ('Z' - 'z');
+            return in;
+    });
+    return ext;
 }
 
 

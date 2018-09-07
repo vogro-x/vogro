@@ -1,10 +1,26 @@
+/************************************************************************ 
+ Copyright 2018 andrewpqc@mails.ccnu.edu.cn
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.                                                                                                        
+ ************************************************************************/
+
+
 #ifndef _BASE_SERVER_HPP_
 #define _BASE_SERVER_HPP_
 
 #include <boost/asio.hpp>
 
 #include <iostream>
-#include <regex>
+// #include <regex>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -14,6 +30,7 @@
 #include "response.hpp"
 #include "vogro_logger.hpp"
 #include "vogro_utils.hpp"
+#include "static_server.hpp"
 
 namespace vogro {
 
@@ -171,9 +188,8 @@ public:
       std::map<std::string, std::string> tempPathParamStoreMap;
       auto matchResult = urlMatch(request->getPath(), res_it->first, tempPathParamStoreMap);
       if ((!matchResult.first) && (matchResult.second)) {
-        // ServiceStatic(response, *request)
-        matchedOne = true;
-        break;
+        ServeStatic(response, *request,responseStream,write_buffer,socket);
+        return ;
       } else if ((matchResult.first) && (!matchResult.second)) {
         if (res_it->second.count(request->getMethod()) > 0) {
           request->setPathParam(tempPathParamStoreMap);
@@ -199,11 +215,12 @@ public:
       }
 
     responseStream << response.makeResponseMsg();
+
     boost::asio::async_write(
         *socket, *write_buffer,
         [this, socket, request, write_buffer, &response](
             const boost::system::error_code &ec, size_t bytes_transferred) {
-          logger.LOG_INFO(request->getMethod(), request->getPath(),
+          logger.LOG_DEBUG(request->getRemoteIP(), request->getMethod(), request->getPath(),
                           response.getCode());
 
           if (!ec && std::stof(request->getVersion()) > 1.05)
