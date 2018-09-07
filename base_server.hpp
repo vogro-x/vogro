@@ -12,7 +12,7 @@
 
 #include "request.hpp"
 #include "response.hpp"
-#include "utils.hpp"
+#include "vogro_utils.hpp"
 #include "vogro_logger.hpp"
 
 namespace vogro {
@@ -163,6 +163,20 @@ public:
     auto write_buffer = std::make_shared<boost::asio::streambuf>();
     std::ostream responseStream(write_buffer.get());
     for (auto res_it : all_resources) {
+   /*  pair(a,b)
+    *  if(!a&&!b) not match
+    *  if(a&&!b) a normal match
+    *  if(!a&&b) a match to request static files*/
+      auto matchResult = urlMatch(request->getPath(), res_it->first, request->pathParam);
+      if (!matchResult.first && matchResult.second){
+        //a match to request static files
+      }
+      else if(matchResult.first && !matchResult.second){
+        //a normal match
+      }else{
+        //not match
+      }
+      
       if (urlMatch(request->getPath(), res_it->first, request->pathParam)) {
         if (res_it->second.count(request->getMethod()) > 0) {
           // request->pathParam = move(what);
