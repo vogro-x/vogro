@@ -65,6 +65,7 @@ public:
 
     // n-1 thread pool
 
+
     for (size_t c = 1; c < thread_num; c++) {
       threads.emplace_back([this]() { io_svc.run(); });
     }
@@ -77,7 +78,6 @@ public:
   }
 
   void process_request_and_respond(std::shared_ptr<socket_type> socket) const {
-
     auto read_buffer = std::make_shared<boost::asio::streambuf>();
     boost::asio::async_read_until(
         *socket, *read_buffer, "\r\n\r\n",
@@ -89,7 +89,11 @@ public:
             std::istream stream(read_buffer.get());
 
             auto request = std::make_shared<vogro::Request>();
+
             *request = parse_request(stream);
+
+            request->setRemoteIP(socket->remote_endpoint().address().to_string());
+            request->setRemotePort(socket->remote_endpoint().port());
 
             size_t num_additional_bytes = total - bytes_transferred;
             if (request->getHeader("Content-Length") != "") {
