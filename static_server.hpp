@@ -12,6 +12,8 @@
 #include <sstream>
 #include <string>
 
+// https://github.com/golang/go/blob/42257a262c94d839364113f2dbf4057731971fc1/src/net/http/fs.go#L713
+
 template <typename socket_type>
 void ServeStatic(vogro::Response &response, vogro::Request &request,
                  std::ostream &responseStream,
@@ -38,13 +40,19 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
         boost::asio::async_write(
             *socket, *write_buffer,
             [](const boost::system::error_code &ec, size_t bytes_transferred) {
-                // do nothing here.
+                //
             });
     } else {
+        if (request.getHeader("Range")!=""){
+            response.setCode(206);
+        }
         response.addHeader("Connection", "Keep-Alive");
         response.addHeader("Content-Type", type);
+        response.addHeader
+        // send header first
+
         std::ifstream ifs;
-        ifs.open(filepath, std::ifstream::in | std::ifstream::binary);
+        ifs.open(filepath, std::ifstream::in);
         if (ifs) {
             ifs.seekg(0, std::ios::end);
             size_t length = ifs.tellg();
