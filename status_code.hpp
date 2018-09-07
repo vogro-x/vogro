@@ -1,4 +1,4 @@
-/************************************************************************ 
+/************************************************************************
  Copyright 2018 andrewpqc@mails.ccnu.edu.cn
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -10,27 +10,27 @@
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
- limitations under the License.                                                                                                        
+ limitations under the License.
  ************************************************************************/
 
 #include <iostream>
-#include <string>
 #include <memory>
+#include <string>
 #include <unordered_map>
 
 #ifndef __COMMOM_HPP__
 #define __COMMOM_HPP__
 
-namespace vogro{
+namespace vogro {
 
 // see https://zh.wikipedia.org/wiki/HTTP状态码
 
-//1xx
+// 1xx
 #define CodeContinue_100 100
 #define CodeSwitchingProtocols_101 101
 #define CodeProcessing 102
 
-//2xx
+// 2xx
 #define CodeOK_200 200
 #define CodeCreated_201 201
 #define CodeAccepted_202 202
@@ -42,7 +42,7 @@ namespace vogro{
 #define CodeAlreadyReported_208 208
 #define CodeIMUsed_226 226
 
-//3xx
+// 3xx
 #define CodeMultipleChoices_300 300
 #define CodeMovedPermanently_301 301
 #define CodeFound_302 302
@@ -53,7 +53,7 @@ namespace vogro{
 #define CodeTemporaryRedirect_307 307
 #define CodePermanentRedirect_308 308
 
-//4xx
+// 4xx
 #define CodeBadRequest_400 400
 #define CodeUnauthorized_401 401
 #define CodePaymentRequired_402 402
@@ -88,7 +88,7 @@ namespace vogro{
 #define CodeUnavailableForLegalReasons_451 451
 #define CodeRequestHeaderTooLarge_494 494
 
-//5xx
+// 5xx
 #define CodeInternalServerError_500 500
 #define CodeNotImplemented_501 501
 #define CodeBadGateway_502 502
@@ -101,9 +101,9 @@ namespace vogro{
 #define CodeHTTPNotExtended_510 510
 #define CodeHTTPNetworkAuthenticationRequired_511 511
 
-class StatusCodeMap{
-private:
-	StatusCodeMap(){
+class StatusCodeMap {
+   private:
+    StatusCodeMap() {
         codePhrase[100] = "Continue";
         codePhrase[101] = "Switching Protocols";
         codePhrase[102] = "Processing";
@@ -175,26 +175,24 @@ private:
         codePhrase[510] = "Not Extended";
         codePhrase[511] = "Network Authentication Required";
     }
-	
 
     std::unordered_map<unsigned long, std::string> codePhrase;
-public:
-    StatusCodeMap(const StatusCodeMap &)=delete;
-	StatusCodeMap & operator = (const StatusCodeMap &)=delete;
 
-    std::string getPharseByCode(unsigned long code){
-        std::unordered_map<unsigned long,std::string>::const_iterator got=codePhrase.find(code);
+   public:
+    StatusCodeMap(const StatusCodeMap &) = delete;
+    StatusCodeMap &operator=(const StatusCodeMap &) = delete;
+
+    std::string getPharseByCode(unsigned long code) {
+        std::unordered_map<unsigned long, std::string>::const_iterator got =
+            codePhrase.find(code);
         return (got == codePhrase.end()) ? "" : got->second;
     }
 
-	static StatusCodeMap& GetInstance(){
-		static StatusCodeMap instance;   //局部静态变量
-		return instance;
-	}
+    static StatusCodeMap &GetInstance() {
+        static StatusCodeMap instance;  //局部静态变量
+        return instance;
+    }
 };
-
 }
-
-
 
 #endif

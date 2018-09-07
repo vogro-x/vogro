@@ -1,13 +1,10 @@
-#include <string>
 #include <cstdio>
 #include <map>
-
-
+#include <string>
 
 #ifndef __COMMON_HPP__
-#define __COMMON_HPP__ 
-#define __VOGRO_VERSION__ "0.1" ;
-
+#define __COMMON_HPP__
+#define __VOGRO_VERSION__ "0.1";
 
 // std::string ltrim(std::string str) {
 //     auto length = str.length();
@@ -34,7 +31,5 @@
 // std::string trim(std::string str) {
 //     return rtrim(ltrim(str));
 // }
-
-
 
 #endif
