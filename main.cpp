@@ -10,14 +10,13 @@ int main() {
                     });
 
     server.addRoute("/username/{str:name}/", "GET",
-                    [](vogro::Response &response, vogro::Request &request) {
-                        auto name = request.getPathParam("name");
-                        response.addBody(name);
-                        return;
-                    });
+              [](vogro::Response &response, vogro::Request &request) {
+                    auto name = request.getPathParam("name");
+                    response.addBody(name);
+                    return;
+      });
 
-    server.addRoute(
-        "/course/{str:coursename}/user/{int:id}/", "GET",
+    server.addRoute("/course/{str:coursename}/user/{int:id}/", "GET",
         [](vogro::Response &response, vogro::Request &request) {
             auto coursename = request.getPathParam("coursename");
             auto id = request.getPathParam("id");

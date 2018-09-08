@@ -15,6 +15,7 @@
 
 #ifndef __VOGRO_UTILS_HPP__
 #define __VOGRO_UTILS_HPP__
+#include <unistd.h>
 #include <algorithm>
 #include <map>
 #include <string>
@@ -189,6 +190,14 @@ std::string getFileExtension(std::string path) {
         return in;
     });
     return ext;
+}
+
+int is_file_exist(const char *path) {
+    if (path == NULL) return -1;
+    if (access(path, F_OK) == 0) {
+        return 0;
+    }
+    return -1;
 }
 
 #endif

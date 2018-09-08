@@ -79,18 +79,13 @@ class Response {
 
     void setPhrase(std::string phrase) {}
 
-    void addHeader(std::string key, std::string val) {
-        this->headers[key] = val;
-    }
+    void addHeader(std::string key, std::string val) { this->headers[key] = val;}
 
     void addBody(std::string cnt) { this->body << cnt; }
 
-    // a template engien maybe provide later.
-    // void renderTeamplate(std::string filena{me,...);
-    std::stringstream & getResponseBodyStrem(){
-      return body;
-    }
-    
+   
+    std::stringstream & getResponseBodyStrem(){return body; }
+
     std::string  makeResponseMsg() {
         std::stringstream responseMsg;
 
