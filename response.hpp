@@ -86,9 +86,12 @@ class Response {
     void addBody(std::string cnt) { this->body << cnt; }
 
     // a template engien maybe provide later.
-    // void renderTeamplate(std::string filename,...);
-
-    std::string makeResponseMsg() {
+    // void renderTeamplate(std::string filena{me,...);
+    std::stringstream & getResponseBodyStrem(){
+      return body;
+    }
+    
+    std::string  makeResponseMsg() {
         std::stringstream responseMsg;
 
         // add  response line
@@ -112,9 +115,7 @@ class Response {
 
         // empty line
         responseMsg << "\r\n";
-
         responseMsg << this->body.rdbuf();
-
         return responseMsg.str();
     }
 };
