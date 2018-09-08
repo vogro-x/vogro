@@ -31,17 +31,18 @@
 #include "vogro_logger.hpp"
 #include "vogro_utils.hpp"
 
-namespace vogro {
+namespace vogro
+{
 
-typedef std::map<
-    std::string,
-    std::unordered_map<
-        std::string, std::function<void(vogro::Response &, vogro::Request &)>>>
+typedef std::map<std::string,
+                 std::unordered_map<
+                     std::string, std::function<void(vogro::Response &, vogro::Request &)>>>
     RegistrationCenter;
 
 template <typename socket_type>
-class ServerBase {
-   protected:
+class ServerBase
+{
+  protected:
     boost::asio::io_service io_svc;
     boost::asio::ip::tcp::endpoint endpoint;
     boost::asio::ip::tcp::acceptor acceptor;
@@ -65,18 +66,21 @@ class ServerBase {
 
     virtual void accept() {}
 
-   public:
+  public:
     ServerBase(unsigned short port, size_t num_threads)
         : endpoint(boost::asio::ip::tcp::v4(), port),
           acceptor(io_svc, endpoint),
           thread_num(num_threads) {}
 
-    void runServer() {
-        for (auto it = user_resource.begin(); it != user_resource.end(); it++) {
+    void runServer()
+    {
+        for (auto it = user_resource.begin(); it != user_resource.end(); it++)
+        {
             all_resources.push_back(it);
         }
         for (auto it = vogro_resource.begin(); it != vogro_resource.end();
-             it++) {
+             it++)
+        {
             all_resources.push_back(it);
         }
         logger.LOG_INFO("vogro server is linstening on port:", 12345);
@@ -84,24 +88,28 @@ class ServerBase {
 
         // n-1 thread pool
 
-        for (size_t c = 1; c < thread_num; c++) {
+        for (size_t c = 1; c < thread_num; c++)
+        {
             threads.emplace_back([this]() { io_svc.run(); });
         }
 
         // main thread
         io_svc.run();
 
-        for (auto &t : threads) t.join();
+        for (auto &t : threads)
+            t.join();
     }
 
     void process_request_and_respond(
-        std::shared_ptr<socket_type> socket) const {
+        std::shared_ptr<socket_type> socket) const
+    {
         auto read_buffer = std::make_shared<boost::asio::streambuf>();
         boost::asio::async_read_until(
             *socket, *read_buffer, "\r\n\r\n",
             [this, socket, read_buffer](const boost::system::error_code &ec,
                                         size_t bytes_transferred) {
-                if (!ec) {
+                if (!ec)
+                {
                     size_t total = read_buffer->size();
 
                     std::istream stream(read_buffer.get());
@@ -115,7 +123,8 @@ class ServerBase {
                     request->setRemotePort(socket->remote_endpoint().port());
 
                     size_t num_additional_bytes = total - bytes_transferred;
-                    if (request->getHeader("Content-Length") != "") {
+                    if (request->getHeader("Content-Length") != "")
+                    {
                         boost::asio::async_read(
                             *socket, *read_buffer,
                             boost::asio::transfer_exactly(
@@ -125,7 +134,8 @@ class ServerBase {
                             [this, socket, read_buffer, request](
                                 const boost::system::error_code &ec,
                                 size_t bytes_transferred) {
-                                if (!ec) {
+                                if (!ec)
+                                {
                                     // 将指针作为 istream 对象存储到 read_buffer
                                     // 中
                                     request->ReadJSON(
@@ -136,20 +146,23 @@ class ServerBase {
                                     respond(socket, request);
                                 }
                             });
-                    } else {
+                    }
+                    else
+                    {
                         respond(socket, request);
                     }
                 }
             });
     }
 
-    vogro::Request parse_request(std::istream &stream) const {
+    vogro::Request parse_request(std::istream &stream) const
+    {
         vogro::Request req;
 
         // parse request line
         std::string line;
         getline(stream, line);
-        line.pop_back();  //去掉换行符
+        line.pop_back(); //去掉换行符
         auto threesome = parse_request_line(line);
         req.setMethod(threesome.first);
         req.setVersion(threesome.second.second);
@@ -157,9 +170,12 @@ class ServerBase {
         std::string url = threesome.second.first;
 
         std::size_t pos = url.find_first_of('?');
-        if (pos == std::string::npos) {
+        if (pos == std::string::npos)
+        {
             req.setPath(url);
-        } else {
+        }
+        else
+        {
             std::string path = url.substr(0, pos);
             req.setPath(path);
 
@@ -168,11 +184,13 @@ class ServerBase {
         }
 
         // parse request headers
-        while (true) {
+        while (true)
+        {
             getline(stream, line);
             line.pop_back();
 
-            if (line == "") {
+            if (line == "")
+            {
                 break;
             }
 
@@ -184,28 +202,36 @@ class ServerBase {
     }
 
     void respond(std::shared_ptr<socket_type> socket,
-                 std::shared_ptr<vogro::Request> request) const {
+                 std::shared_ptr<vogro::Request> request) const
+    {
         // 对请求路径和方法进行匹配查找，并生成响应
         vogro::Response response;
         auto write_buffer = std::make_shared<boost::asio::streambuf>();
         std::ostream responseStream(write_buffer.get());
         bool matchedOne = false;
-        for (auto res_it : all_resources) {
+        for (auto res_it : all_resources)
+        {
             std::map<std::string, std::string> tempPathParamStoreMap;
             auto matchResult = urlMatch(request->getPath(), res_it->first,
                                         tempPathParamStoreMap);
-            if ((!matchResult.first) && (matchResult.second)) {
+            if ((!matchResult.first) && (matchResult.second))
+            {
                 ServeStatic(response, *request, responseStream, write_buffer,
                             socket);
                 return;
-            } else if ((matchResult.first) && (!matchResult.second)) {
-                if (res_it->second.count(request->getMethod()) > 0) {
+            }
+            else if ((matchResult.first) && (!matchResult.second))
+            {
+                if (res_it->second.count(request->getMethod()) > 0)
+                {
                     request->setPathParam(tempPathParamStoreMap);
                     res_it->second[request->getMethod()](
-                        response, *request);  // exec handler
+                        response, *request); // exec handler
                     matchedOne = true;
                     break;
-                } else {
+                }
+                else
+                {
                     response.setCode(405);
                     auto got = error_handlers.find(405);
                     if (got == error_handlers.end())
@@ -218,7 +244,8 @@ class ServerBase {
             }
         }
 
-        if (!matchedOne) {
+        if (!matchedOne)
+        {
             response.setCode(404);
             auto got = error_handlers.find(404);
             if (got == error_handlers.end())
@@ -244,17 +271,19 @@ class ServerBase {
 
     void addRoute(
         std::string userPath, std::string method,
-        std::function<void(vogro::Response &, vogro::Request &)> handler) {
+        std::function<void(vogro::Response &, vogro::Request &)> handler)
+    {
         this->user_resource[userPath][method] = handler;
     }
 
     void customErrorHandler(
         unsigned short code,
-        std::function<void(vogro::Response &, vogro::Request &)> handler) {
+        std::function<void(vogro::Response &, vogro::Request &)> handler)
+    {
         this->error_handlers[code] = handler;
     }
 };
 
-}  // namespace vogro
+} // namespace vogro
 
 #endif
