@@ -27,6 +27,7 @@
 
 #include <dirent.h>
 #include <boost/asio.hpp>
+#include <cstdlib>
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -35,14 +36,14 @@
 // https://github.com/golang/go/blob/42257a262c94d839364113f2dbf4057731971fc1/src/net/http/fs.go#L713
 
 // Ranges : bytes = xxx -xxx
-std::pair<size_t, size_t> parseRange(const std::string &Ranges) {
+std::pair<long, long> parseRange(const std::string &Ranges) {
   auto pos1 = Ranges.find_first_of('=');
   auto pos2 = Ranges.find_last_of('-');
   auto start = Ranges.substr(pos1 + 1, pos2 - pos1 - 1);
   auto end = Ranges.substr(pos2 + 1);
   std::cout << "|" << start << "|" << end << "|" << std::endl;
-  auto int_start = (start == "") ? 0 : std::stol(start);
-  auto int_end = (end == "") ? 0 : std::stol(end);
+  auto int_start = (start == "") ? -1 : std::stol(start);
+  auto int_end = (end == "") ? -1 : std::stol(end);
   return std::make_pair(int_start, int_end);
 }
 
@@ -66,51 +67,70 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
   auto type = mime.getMimeTypeByExt(ext);
   if (type == "") {
     response.setCode(415);
-    responseStream << response.makeResponseMsg();
-    boost::asio::async_write(
-        *socket, *write_buffer,
-        [](const boost::system::error_code &ec, size_t bytes_transferred) {
-          //
-        });
-    return;
+
   } else {
     if (is_file_exist(filepath.c_str())) {
       response.setCode(404);
-      responseStream << response.makeResponseMsg();
-      boost::asio::async_write(
-          *socket, *write_buffer,
-          [](const boost::system::error_code &ec, size_t bytes_transferred) {
-            //
-          });
-      return;
-    }
 
-    response.addHeader("Connection", "Keep-Alive");
-    response.addHeader("Content-Type", type);
-    response.addHeader(" Access-Ranges", "bytes");
-
-    auto rangeValue = request.getHeader("Range");
-    if (rangeValue == "") {
-      //普通请求
-      std::ifstream ifs(filepath, std::ifstream::binary);
-
-      response.getResponseBodyStrem() << ifs.rdbuf();
-
-      responseStream << response.makeResponseMsg();
-      boost::asio::async_write(
-          *socket, *write_buffer,
-          [](const boost::system::error_code &ec, size_t bytes_transferred) {
-            //
-          });
     } else {
-      //范围请求
-      auto rangeResult = parseRange(rangeValue);
-      if (rangeResult.first == 0) {
-        //请求最后的rangeResult.secode字节的数据
-      } else if (rangeResult.second == 0) {
-        //请求从rangeResult.first到文件结尾的数据
+      response.addHeader("Connection", "Keep-Alive");
+      response.addHeader("Content-Type", type);
+      response.addHeader("Accept-Ranges", "bytes");
+
+      std::ifstream ifs(filepath, std::ifstream::binary);
+      ifs.seekg(0, std::ios::end);
+      int64_t fileLength = ifs.tellg();
+      ifs.seekg(0, std::ios::beg);
+
+      auto rangeValue = request.getHeader("Range");
+      if (rangeValue == "") {
+        //普通请求
+        response.getResponseBodyStrem() << ifs.rdbuf();
+
       } else {
-        //请求从rangeResult.first到rangeResult.secode字节范围的数据
+        //范围请求
+        auto rangeResult = parseRange(rangeValue);
+        if (rangeResult.first == -1 && rangeResult.second != -1) {
+          //请求最后的rangeResult.secode字节的数据
+
+          if (rangeResult.first >= fileLength) {
+            response.setCode(416);
+          } else {
+            response.setCode(206);
+
+            std::stringstream contentRange;
+            contentRange << "bytes " << fileLength - rangeResult.second << "-"
+                         << fileLength << '/' << fileLength;
+            response.addHeader("Content-Range", contentRange.str());
+
+            ifs.seekg(-rangeResult.second, std::ios::end);
+            response.getResponseBodyStrem() << ifs.rdbuf();
+          }
+        } else if (rangeResult.first != -1 && rangeResult.second == -1) {
+          //请求从rangeResult.first到文件结尾的数据
+
+          if (rangeResult.first >= fileLength) {
+            response.setCode(416);
+          } else {
+            std::stringstream contentRange;
+            contentRange << "bytes " << rangeResult.first << "-" << fileLength
+                         << "/" << fileLength;
+            response.addHeader("Content-Range", contentRange.str());
+
+            response.setCode(206);
+
+            ifs.seekg(rangeResult.first, std::ios::beg);
+            response.getResponseBodyStrem() << ifs.rdbuf();
+          }
+        } else {
+          //请求从rangeResult.first到rangeResult.secode字节范围的数据
+          if (rangeResult.first > rangeResult.second) {
+            response.setCode(416);
+          } else {
+            //...
+            response.getResponseBodyStrem() << ifs.rdbuf();
+          }
+        }
       }
     }
 

@@ -99,23 +99,23 @@ class ServerBase {
         [this, socket, read_buffer](const boost::system::error_code &ec,
                                     size_t bytes_transferred) {
           if (!ec) {
-            size_t total = read_buffer - > size();
+            size_t total = read_buffer->size();
 
             std::istream stream(read_buffer.get());
 
             auto request = std::make_shared<vogro::Request>();
             *request = parse_request(stream);
 
-            request - >
-                setRemoteIP(socket - > remote_endpoint().address().to_string());
-            request - > setRemotePort(socket - > remote_endpoint().port());
+            request->setRemoteIP(
+                socket->remote_endpoint().address().to_string());
+            request->setRemotePort(socket->remote_endpoint().port());
 
             size_t num_additional_bytes = total - bytes_transferred;
-            if (request - > getHeader("Content-Length") != "") {
+            if (request->getHeader("Content-Length") != "") {
               boost::asio::async_read(
                   *socket, *read_buffer,
                   boost::asio::transfer_exactly(
-                      std::stoull(request - > getHeader("Content-Length")) -
+                      std::stoull(request->getHeader("Content-Length")) -
                       num_additional_bytes),
                   [this, socket, read_buffer, request](
                       const boost::system::error_code &ec,
@@ -123,8 +123,8 @@ class ServerBase {
                     if (!ec) {
                       // 将指针作为 istream 对象存储到 read_buffer
                       // 中
-                      request - > ReadJSON(std::shared_ptr<std::istream>(
-                                      new std::istream(read_buffer.get())));
+                      request->ReadJSON(std::shared_ptr<std::istream>(
+                          new std::istream(read_buffer.get())));
 
                       respond(socket, request);
                     }
@@ -185,16 +185,18 @@ class ServerBase {
     bool matchedOne = false;
     for (auto res_it : all_resources) {
       std::map<std::string, std::string> tempPathParamStoreMap;
-      auto matchResult = urlMatch(request - > getPath(), res_it - > first,
-                                  tempPathParamStoreMap);
+      auto matchResult =
+          urlMatch(request->getPath(), res_it->first, tempPathParamStoreMap);
       if ((!matchResult.first) && (matchResult.second)) {
         ServeStatic(response, *request, responseStream, write_buffer, socket);
-        return;
+        matchedOne = true;
+        break;
+        // return;
       } else if ((matchResult.first) && (!matchResult.second)) {
-        if (res_it - > second.count(request - > getMethod()) > 0) {
-          request - > setPathParam(tempPathParamStoreMap);
-          res_it - > second[request - > getMethod()](response,
-                                                     *request);  // exec handler
+        if (res_it->second.count(request->getMethod()) > 0) {
+          request->setPathParam(tempPathParamStoreMap);
+          res_it->second[request->getMethod()](response,
+                                               *request);  // exec handler
           matchedOne = true;
           break;
         } else {
@@ -203,7 +205,7 @@ class ServerBase {
           if (got == error_handlers.end())
             default_error_handler(response, *request);
           else
-            got - > second(response, *request);
+            got->second(response, *request);
           matchedOne = true;
           break;
         }
@@ -216,7 +218,7 @@ class ServerBase {
       if (got == error_handlers.end())
         default_error_handler(response, *request);
       else
-        got - > second(response, *request);
+        got->second(response, *request);
     }
 
     responseStream << response.makeResponseMsg();
@@ -225,10 +227,10 @@ class ServerBase {
         *socket, *write_buffer,
         [this, socket, request, write_buffer, &response](
             const boost::system::error_code &ec, size_t bytes_transferred) {
-          logger.LOG_DEBUG(request - > getRemoteIP(), request - > getMethod(),
-                           request - > getPath(), response.getCode());
+          logger.LOG_DEBUG(request->getRemoteIP(), request->getMethod(),
+                           request->getPath(), response.getCode());
 
-          if (!ec && std::stof(request - > getVersion()) > 1.05)
+          if (!ec && std::stof(request->getVersion()) > 1.05)
             process_request_and_respond(socket);
         });
     return;
@@ -237,13 +239,13 @@ class ServerBase {
   void addRoute(
       std::string userPath, std::string method,
       std::function<void(vogro::Response &, vogro::Request &)> handler) {
-    this - > user_resource[userPath][method] = handler;
+    this->user_resource[userPath][method] = handler;
   }
 
   void customErrorHandler(
       unsigned short code,
       std::function<void(vogro::Response &, vogro::Request &)> handler) {
-    this - > error_handlers[code] = handler;
+    this->error_handlers[code] = handler;
   }
 };
 
