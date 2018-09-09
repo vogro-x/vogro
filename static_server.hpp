@@ -13,7 +13,7 @@
  limitations under the License.
  ************************************************************************/
 
-//TODO
+// TODO
 // 数据压缩传输
 // 断点续传
 // 重构代码
@@ -34,62 +34,88 @@
 
 // https://github.com/golang/go/blob/42257a262c94d839364113f2dbf4057731971fc1/src/net/http/fs.go#L713
 
-
+// Ranges : bytes = xxx -xxx
+std::pair<size_t, size_t> parseRange(const std::string &Ranges) {
+  auto pos1 = Ranges.find_first_of('=');
+  auto pos2 = Ranges.find_last_of('-');
+  auto start = Ranges.substr(pos1 + 1, pos2 - pos1 - 1);
+  auto end = Ranges.substr(pos2 + 1);
+  std::cout << "|" << start << "|" << end << "|" << std::endl;
+  auto int_start = (start == "") ? 0 : std::stol(start);
+  auto int_end = (end == "") ? 0 : std::stol(end);
+  return std::make_pair(int_start, int_end);
+}
 
 template <typename socket_type>
-void ServeStatic(vogro::Response &response, vogro::Request &request, std::ostream &responseStream,
-                 std::shared_ptr<boost::asio::streambuf> &write_buffer, socket_type socket) {
-    char *buffer;
-    if ((buffer = getcwd(NULL, 0)) == NULL) {
-        perror("getcwd error");
-        exit(EXIT_FAILURE);
+void ServeStatic(vogro::Response &response, vogro::Request &request,
+                 std::ostream &responseStream,
+                 std::shared_ptr<boost::asio::streambuf> &write_buffer,
+                 socket_type socket) {
+  char *buffer;
+  if ((buffer = getcwd(NULL, 0)) == NULL) {
+    perror("getcwd error");
+    exit(EXIT_FAILURE);
+  }
+
+  auto cwd = std::string(buffer);
+  auto path = request.getPath();
+  auto filepath = cwd + path;
+
+  auto ext = getFileExtension(filepath);
+  MimeTypeMap &mime = MimeTypeMap::GetInstance();
+  auto type = mime.getMimeTypeByExt(ext);
+  if (type == "") {
+    response.setCode(415);
+    responseStream << response.makeResponseMsg();
+    boost::asio::async_write(
+        *socket, *write_buffer,
+        [](const boost::system::error_code &ec, size_t bytes_transferred) {
+          //
+        });
+    return;
+  } else {
+    if (is_file_exist(filepath.c_str())) {
+      response.setCode(404);
+      responseStream << response.makeResponseMsg();
+      boost::asio::async_write(
+          *socket, *write_buffer,
+          [](const boost::system::error_code &ec, size_t bytes_transferred) {
+            //
+          });
+      return;
     }
 
-    auto cwd = std::string(buffer);
-    auto path = request.getPath();
-    auto filepath = cwd + path;
+    response.addHeader("Connection", "Keep-Alive");
+    response.addHeader("Content-Type", type);
+    response.addHeader(" Access-Ranges", "bytes");
 
-    auto ext = getFileExtension(filepath);
-    MimeTypeMap &mime = MimeTypeMap::GetInstance();
-    auto type = mime.getMimeTypeByExt(ext);
-    if (type == "") {
-        response.setCode(415);
-        responseStream << response.makeResponseMsg();
-        boost::asio::async_write(
-            *socket, *write_buffer,
-            [](const boost::system::error_code &ec, size_t bytes_transferred) {
-                //
-            });
-            return ;
+    auto rangeValue = request.getHeader("Range");
+    if (rangeValue == "") {
+      //普通请求
+      std::ifstream ifs(filepath, std::ifstream::binary);
+
+      response.getResponseBodyStrem() << ifs.rdbuf();
+
+      responseStream << response.makeResponseMsg();
+      boost::asio::async_write(
+          *socket, *write_buffer,
+          [](const boost::system::error_code &ec, size_t bytes_transferred) {
+            //
+          });
     } else {
-        if(is_file_exist(filepath.c_str())){
-            response.setCode(404);
-            responseStream << response.makeResponseMsg();
-            boost::asio::async_write(*socket, *write_buffer,
-                                     [](const boost::system::error_code &ec,
-                                        size_t bytes_transferred) {
-                                         //
-                                     });
-            return;
-        }
-        
-        response.addHeader("Connection", "Keep-Alive");
-        response.addHeader("Content-Type", type);
-       
-        
-        std::ifstream ifs(filepath, std::ifstream::binary);
-        
-        response.getResponseBodyStrem() <<ifs.rdbuf();
-        
-        responseStream << response.makeResponseMsg();
-        boost::asio::async_write(
-            *socket, *write_buffer,
-            [](const boost::system::error_code &ec, size_t bytes_transferred) {
-                //
-            });       
-        return;
+      //范围请求
+      auto rangeResult = parseRange(rangeValue);
+      if (rangeResult.first == 0) {
+        //请求最后的rangeResult.secode字节的数据
+      } else if (rangeResult.second == 0) {
+        //请求从rangeResult.first到文件结尾的数据
+      } else {
+        //请求从rangeResult.first到rangeResult.secode字节范围的数据
+      }
     }
-    
+
+    return;
+  }
 }
 
 #endif
