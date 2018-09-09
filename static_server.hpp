@@ -18,6 +18,7 @@
 // 断点续传
 // 重构代码
 // 文件上传处理
+
 #ifndef __STATIC_SERVER_HPP__
 #define __STATIC_SERVER_HPP__
 #include "mime_type.hpp"
@@ -100,7 +101,7 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
                         std::stringstream contentRange;
                         contentRange << "bytes "
                                      << fileLength - rangeResult.second << "-"
-                                     << fileLength << '/' << fileLength;
+                                     << fileLength - 1 << '/' << fileLength;
                         response.addHeader("Content-Range", contentRange.str());
 
                         ifs.seekg(-rangeResult.second, std::ios::end);
@@ -115,7 +116,7 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
                     } else {
                         std::stringstream contentRange;
                         contentRange << "bytes " << rangeResult.first << "-"
-                                     << fileLength << "/" << fileLength;
+                                     << fileLength - 1 << "/" << fileLength;
                         response.addHeader("Content-Range", contentRange.str());
 
                         response.setCode(206);
@@ -128,8 +129,14 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
                     if (rangeResult.first > rangeResult.second) {
                         response.setCode(416);
                     } else {
-                        //...
-                        response.getResponseBodyStrem() << ifs.rdbuf();
+                        ifs.seekg(rangeResult.first, std::ios::beg);
+
+                        auto readLength =
+                            rangeResult.second - rangeResult.first + 1;
+
+                        char readbuf[readLength + 1];
+                        ifs.read(readbuf, readLength);
+                        response.getResponseBodyStrem() << readbuf;
                     }
                 }
             }
