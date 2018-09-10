@@ -39,21 +39,21 @@
 
 // Ranges : bytes = xxx -xxx
 std::pair<long, long> parseRange(const std::string &Ranges) {
-  auto pos1 = Ranges.find_first_of('=');
-  auto pos2 = Ranges.find_last_of('-');
-  auto start = Ranges.substr(pos1 + 1, pos2 - pos1 - 1);
-  auto end = Ranges.substr(pos2 + 1);
-  auto int_start = (start == "") ? -1 : std::stol(start);
-  auto int_end = (end == "") ? -1 : std::stol(end);
-  return std::make_pair(int_start, int_end);
+    auto pos1 = Ranges.find_first_of('=');
+    auto pos2 = Ranges.find_last_of('-');
+    auto start = Ranges.substr(pos1 + 1, pos2 - pos1 - 1);
+    auto end = Ranges.substr(pos2 + 1);
+    auto int_start = (start == "") ? -1 : std::stol(start);
+    auto int_end = (end == "") ? -1 : std::stol(end);
+    return std::make_pair(int_start, int_end);
 }
 
 const std::string getEtag(const std::string &filename) {
-  struct stat statbuf;
-  stat(filename.c_str(), &statbuf);
-  std::stringstream ss;
-  ss << statbuf.st_ino << "-" << statbuf.st_mtime << "-" << statbuf.st_size;
-  return ss.str();
+    struct stat statbuf;
+    stat(filename.c_str(), &statbuf);
+    std::stringstream ss;
+    ss << statbuf.st_ino << "-" << statbuf.st_mtime << "-" << statbuf.st_size;
+    return ss.str();
 }
 
 // todo
@@ -68,97 +68,100 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
                  std::ostream &responseStream,
                  std::shared_ptr<boost::asio::streambuf> &write_buffer,
                  socket_type socket) {
-  char *buffer;
-  if ((buffer = getcwd(NULL, 0)) == NULL) {
-    perror("getcwd error");
-    exit(EXIT_FAILURE);
-  }
-
-  auto cwd = std::string(buffer);
-  auto path = request.getPath();
-  auto filepath = cwd + path;
-
-  auto ext = getFileExtension(filepath);
-  MimeTypeMap &mime = MimeTypeMap::GetInstance();
-  auto type = mime.getMimeTypeByExt(ext);
-  if (type == "") {
-    response.setCode(415);
-
-  } else {
-    if (is_file_exist(filepath.c_str())) {
-      response.setCode(404);
-
-    } else {
-      response.addHeader("Connection", "Keep-Alive");
-      response.addHeader("Content-Type", type);
-      response.addHeader("Accept-Ranges", "bytes");
-
-      std::ifstream ifs(filepath, std::ifstream::binary);
-      ifs.seekg(0, std::ios::end);
-      int64_t fileLength = ifs.tellg();
-      ifs.seekg(0, std::ios::beg);
-
-      auto rangeValue = request.getHeader("Range");
-      if (rangeValue == "") {
-        //普通请求
-        auto etag = getEtag(filepath);
-        response.addHeader("ETag", etag);
-        response.getResponseBodyStrem() << ifs.rdbuf();
-
-      } else {
-        //范围请求
-        auto rangeResult = parseRange(rangeValue);
-        if (rangeResult.first == -1 && rangeResult.second != -1) {
-          //请求最后的rangeResult.secode字节的数据
-
-          if (rangeResult.first >= fileLength) {
-            response.setCode(416);
-          } else {
-            response.setCode(206);
-
-            std::stringstream contentRange;
-            contentRange << "bytes " << fileLength - rangeResult.second << "-"
-                         << fileLength - 1 << '/' << fileLength;
-            response.addHeader("Content-Range", contentRange.str());
-
-            ifs.seekg(-rangeResult.second, std::ios::end);
-            response.getResponseBodyStrem() << ifs.rdbuf();
-          }
-        } else if (rangeResult.first != -1 && rangeResult.second == -1) {
-          //请求从rangeResult.first到文件结尾的数据
-
-          if (rangeResult.first >= fileLength) {
-            response.setCode(416);
-          } else {
-            std::stringstream contentRange;
-            contentRange << "bytes " << rangeResult.first << "-"
-                         << fileLength - 1 << "/" << fileLength;
-            response.addHeader("Content-Range", contentRange.str());
-
-            response.setCode(206);
-
-            ifs.seekg(rangeResult.first, std::ios::beg);
-            response.getResponseBodyStrem() << ifs.rdbuf();
-          }
-        } else {
-          //请求从rangeResult.first到rangeResult.secode字节范围的数据
-          if (rangeResult.first > rangeResult.second) {
-            response.setCode(416);
-          } else {
-            ifs.seekg(rangeResult.first, std::ios::beg);
-
-            auto readLength = rangeResult.second - rangeResult.first + 1;
-
-            char readbuf[readLength + 1];
-            ifs.read(readbuf, readLength);
-            response.getResponseBodyStrem() << readbuf;
-          }
-        }
-      }
+    char *buffer;
+    if ((buffer = getcwd(NULL, 0)) == NULL) {
+        perror("getcwd error");
+        exit(EXIT_FAILURE);
     }
 
-    return;
-  }
+    auto cwd = std::string(buffer);
+    auto path = request.getPath();
+    auto filepath = cwd + path;
+
+    auto ext = getFileExtension(filepath);
+    MimeTypeMap &mime = MimeTypeMap::GetInstance();
+    auto type = mime.getMimeTypeByExt(ext);
+    if (type == "") {
+        response.setCode(415);
+
+    } else {
+        if (is_file_exist(filepath.c_str())) {
+            response.setCode(404);
+
+        } else {
+            response.addHeader("Connection", "Keep-Alive");
+            response.addHeader("Content-Type", type);
+            response.addHeader("Accept-Ranges", "bytes");
+
+            std::ifstream ifs(filepath, std::ifstream::binary);
+            ifs.seekg(0, std::ios::end);
+            int64_t fileLength = ifs.tellg();
+            ifs.seekg(0, std::ios::beg);
+
+            auto rangeValue = request.getHeader("Range");
+            if (rangeValue == "") {
+                //普通请求
+                auto etag = getEtag(filepath);
+                response.addHeader("ETag", etag);
+                response.getResponseBodyStrem() << ifs.rdbuf();
+
+            } else {
+                //范围请求
+                auto rangeResult = parseRange(rangeValue);
+                if (rangeResult.first == -1 && rangeResult.second != -1) {
+                    //请求最后的rangeResult.secode字节的数据
+
+                    if (rangeResult.first >= fileLength) {
+                        response.setCode(416);
+                    } else {
+                        response.setCode(206);
+
+                        std::stringstream contentRange;
+                        contentRange << "bytes "
+                                     << fileLength - rangeResult.second << "-"
+                                     << fileLength - 1 << '/' << fileLength;
+                        response.addHeader("Content-Range", contentRange.str());
+
+                        ifs.seekg(-rangeResult.second, std::ios::end);
+                        response.getResponseBodyStrem() << ifs.rdbuf();
+                    }
+                } else if (rangeResult.first != -1 &&
+                           rangeResult.second == -1) {
+                    //请求从rangeResult.first到文件结尾的数据
+
+                    if (rangeResult.first >= fileLength) {
+                        response.setCode(416);
+                    } else {
+                        std::stringstream contentRange;
+                        contentRange << "bytes " << rangeResult.first << "-"
+                                     << fileLength - 1 << "/" << fileLength;
+                        response.addHeader("Content-Range", contentRange.str());
+
+                        response.setCode(206);
+
+                        ifs.seekg(rangeResult.first, std::ios::beg);
+                        response.getResponseBodyStrem() << ifs.rdbuf();
+                    }
+                } else {
+                    //请求从rangeResult.first到rangeResult.secode字节范围的数据
+                    if (rangeResult.first > rangeResult.second) {
+                        response.setCode(416);
+                    } else {
+                        ifs.seekg(rangeResult.first, std::ios::beg);
+
+                        auto readLength =
+                            rangeResult.second - rangeResult.first + 1;
+
+                        char readbuf[readLength + 1];
+                        ifs.read(readbuf, readLength);
+                        response.getResponseBodyStrem() << readbuf;
+                    }
+                }
+            }
+        }
+
+        return;
+    }
 }
 
 #endif
