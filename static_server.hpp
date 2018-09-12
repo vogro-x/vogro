@@ -35,7 +35,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
-
+#include <vector>
 // https://github.com/golang/go/blob/42257a262c94d839364113f2dbf4057731971fc1/src/net/http/fs.go#L713
 // https://www.rfc-editor.org/rfc/rfc7233.txt
 
@@ -47,15 +47,35 @@ enum Cond {
     CondFalse,
 };
 
-std::pair<long, long> parseRange(const std::string &Ranges) {
-    auto pos1 = Ranges.find_first_of('=');
-    auto pos2 = Ranges.find_last_of('-');
-    auto start = Ranges.substr(pos1 + 1, pos2 - pos1 - 1);
-    auto end = Ranges.substr(pos2 + 1);
-    auto int_start = (start == "") ? -1 : std::stol(start);
-    auto int_end = (end == "") ? -1 : std::stol(end);
-    return std::make_pair(int_start, int_end);
+struct range{
+    unsigned long start;
+    unsigned long len;
+};
+
+std::vector<std::string> split(const std::string& s, char delimiter) {
+   std::vector<std::string> tokens;
+   std::string token;
+   std::istringstream tokenStream(s);
+   while (std::getline(tokenStream, token, delimiter))
+   {
+      tokens.push_back(token);
+   }
+   return tokens;
 }
+
+
+std::vector<range> parseRange(const std::string& Ranges,size_t total_size){
+    std::vector<range> vr;
+    
+    std::vector<std::string> splitResult;
+    splitResult = split(Ranges,',');
+    for(auto s:splitResult){
+        // parse s
+    }
+
+}
+
+
 
 // getEtag to get the ETag of a static file, the Etag's format is
 // A-B-C
@@ -71,9 +91,11 @@ const std::string getEtag(const std::string &filename) {
 }
 
 // compareTime to compare a GMT time string and the time of last modification
-// of the filename. If the giving GMT time is bigger than the file's last
-// modification time, it return true, otherwise return false.
-bool compareTime(const std::string &GmtString, const std::string &filename) {
+// of the filename,and return (GmtTime-ModifiyTime) in seconds. that is to say, 
+// if Gmt time string is smaller than(earlier) modifiy time. it returns a 
+// negative number, otherwise returns a positive number. if the two time is equal,
+// it returns zero.
+double compareTime(const std::string &GmtString, const std::string &filename) {
     tm tm_;
     time_t t_;
     char buf[128] = {0};
@@ -85,8 +107,9 @@ bool compareTime(const std::string &GmtString, const std::string &filename) {
     t_ += 3600;
     struct stat statbuf;
     stat(filename.c_str(), &statbuf);
-    return difftime(t_, statbuf.st_mtime) > 0;
+    return difftime(t_, statbuf.st_mtime);
 }
+
 
 // ETag值匹配才发送资源
 Cond checkIfMatch(std::string &IfMatchHeadString, const std::string &filename) {
@@ -97,14 +120,12 @@ Cond checkIfMatch(std::string &IfMatchHeadString, const std::string &filename) {
     return CondFalse;
 }
 
-//
+
 Cond checkIfUnmodifiedSince(std::string &IfUnmodifiedSinceString,
                             const std::string &filename) {
     auto iums = trim(IfUnmodifiedSinceString);
     if (iums == "") return CondNone;
-    if (compareTime(iums, filename)) {
-        return CondTrue;
-    }
+    if (compareTime(iums, filename)>0) return CondTrue;
     return CondFalse;
 }
 
@@ -112,7 +133,6 @@ Cond checkIfNoneMatch(std::string IfNoneMatchString,
                       const std::string &filename) {
     auto inm = trim(IfNoneMatchString);
     if (inm == "") return CondNone;
-    if (inm == "*") return CondFalse;
     if (inm == "*" || inm == getEtag(filename)) return CondFalse;
     return CondTrue;
 }
@@ -123,19 +143,33 @@ Cond checkIfModifiedSince(vogro::Request &request,
         return CondNone;
     auto ims = request.getHeader("If-Modified-Since");
     if (ims == "") return CondNone;
-    if (compareTime(ims, filename)) {
-        return CondFalse
-    }
+    if (compareTime(ims, filename)>0) return CondFalse;
     return CondTrue;
 }
 
-// If-Range is ETag or Date
+// If-Range's Value is ETag or Date
+// if mathced, a range request,otherwise to return all the content to the client
+// more infomation, see https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/If-Range
 Cond checkIfRange(vogro::Request &request, const std::string &filename) {
     if (request.getMethod() != "GET" && request.getMethod() != "HEAD")
         return CondNone;
 
     auto ir = request.getHeader("If-Range");
     if (ir == "") return CondNone;
+
+    // ir value is endwith 'GMT'
+    std::string const ending= "GMT";
+    if(std::equal(ending.rbegin(), ending.rend(), ir.rbegin())){
+        // datetime
+        return (compareTime(ir,filename)==0) ? CondTrue : CondFalse;
+    }else{
+        //etag
+        if (ir == "*") return CondTrue;
+        if (ir == getEtag(filename)) return CondTrue;
+        return CondFalse;
+
+    }
+    
 }
 
 void CheckPreconditons() {}
