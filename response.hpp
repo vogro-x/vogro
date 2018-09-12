@@ -86,6 +86,22 @@ class Response {
    
     std::stringstream & getResponseBodyStrem(){return body; }
 
+    std::string makeResponseMsgWithoutBody(){
+         std::stringstream responseMsg;
+
+        // add  response line
+        responseMsg << "HTTP/" << this->version << " " << this->code << " "
+                    << this->phrase << "\r\n";
+        for (auto header : this->headers) {
+            responseMsg << header.first << ": " << header.second << "\r\n";
+        }
+
+        // empty line
+        responseMsg << "\r\n";
+        return responseMsg.str();
+    }
+
+    
     std::string  makeResponseMsg() {
         std::stringstream responseMsg;
 

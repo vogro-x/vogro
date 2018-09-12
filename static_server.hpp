@@ -28,6 +28,7 @@
 
 #include <dirent.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <boost/asio.hpp>
 #include <cstdlib>
 #include <fstream>
@@ -36,8 +37,16 @@
 #include <string>
 
 // https://github.com/golang/go/blob/42257a262c94d839364113f2dbf4057731971fc1/src/net/http/fs.go#L713
+// https://www.rfc-editor.org/rfc/rfc7233.txt
 
 // Ranges : bytes = xxx -xxx
+
+enum Cond {
+    CondNone = 1,
+    CondTrue,
+    CondFalse,
+};
+
 std::pair<long, long> parseRange(const std::string &Ranges) {
     auto pos1 = Ranges.find_first_of('=');
     auto pos2 = Ranges.find_last_of('-');
@@ -48,6 +57,11 @@ std::pair<long, long> parseRange(const std::string &Ranges) {
     return std::make_pair(int_start, int_end);
 }
 
+// getEtag to get the ETag of a static file, the Etag's format is
+// A-B-C
+// A---> i-node number(serial number) of the file
+// B---> time of last modification of the file
+// C---> size of bytes of the file
 const std::string getEtag(const std::string &filename) {
     struct stat statbuf;
     stat(filename.c_str(), &statbuf);
@@ -56,12 +70,75 @@ const std::string getEtag(const std::string &filename) {
     return ss.str();
 }
 
-// todo
-void checkIfMatch() {}
-void checkIfUnmodifiedSince() {}
-void checkIfNoneMatch() {}
-void checkIfModifiedSince() {}
-void checkIfRange() {}
+// compareTime to compare a GMT time string and the time of last modification
+// of the filename. If the giving GMT time is bigger than the file's last
+// modification time, it return true, otherwise return false.
+bool compareTime(const std::string &GmtString, const std::string &filename) {
+    tm tm_;
+    time_t t_;
+    char buf[128] = {0};
+
+    strcpy(buf, GmtString.c_str());
+    strptime(buf, "%a, %d %b %Y %H:%M:%S GMT", &tm_);
+    tm_.tm_isdst = -1;
+    t_ = mktime(&tm_);
+    t_ += 3600;
+    struct stat statbuf;
+    stat(filename.c_str(), &statbuf);
+    return difftime(t_, statbuf.st_mtime) > 0;
+}
+
+// ETag值匹配才发送资源
+Cond checkIfMatch(std::string &IfMatchHeadString, const std::string &filename) {
+    auto im = trim(IfMatchHeadString);
+    if (im == "") return CondNone;
+    if (im == "*") return CondTrue;
+    if (im == getEtag(filename)) return CondTrue;
+    return CondFalse;
+}
+
+//
+Cond checkIfUnmodifiedSince(std::string &IfUnmodifiedSinceString,
+                            const std::string &filename) {
+    auto iums = trim(IfUnmodifiedSinceString);
+    if (iums == "") return CondNone;
+    if (compareTime(iums, filename)) {
+        return CondTrue;
+    }
+    return CondFalse;
+}
+
+Cond checkIfNoneMatch(std::string IfNoneMatchString,
+                      const std::string &filename) {
+    auto inm = trim(IfNoneMatchString);
+    if (inm == "") return CondNone;
+    if (inm == "*") return CondFalse;
+    if (inm == "*" || inm == getEtag(filename)) return CondFalse;
+    return CondTrue;
+}
+
+Cond checkIfModifiedSince(vogro::Request &request,
+                          const std::string &filename) {
+    if (request.getMethod() != "GET" && request.getMethod() != "HEAD")
+        return CondNone;
+    auto ims = request.getHeader("If-Modified-Since");
+    if (ims == "") return CondNone;
+    if (compareTime(ims, filename)) {
+        return CondFalse
+    }
+    return CondTrue;
+}
+
+// If-Range is ETag or Date
+Cond checkIfRange(vogro::Request &request, const std::string &filename) {
+    if (request.getMethod() != "GET" && request.getMethod() != "HEAD")
+        return CondNone;
+
+    auto ir = request.getHeader("If-Range");
+    if (ir == "") return CondNone;
+}
+
+void CheckPreconditons() {}
 
 template <typename socket_type>
 void ServeStatic(vogro::Response &response, vogro::Request &request,
@@ -105,6 +182,11 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
                 response.addHeader("ETag", etag);
                 response.getResponseBodyStrem() << ifs.rdbuf();
 
+                responseStream << response.makeResponseMsg();
+                boost::asio::async_write(*socket, *write_buffer,
+                                         [](const boost::system::error_code &ec,
+                                            size_t bytes_transferred) {});
+
             } else {
                 //范围请求
                 auto rangeResult = parseRange(rangeValue);
@@ -113,6 +195,12 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
 
                     if (rangeResult.first >= fileLength) {
                         response.setCode(416);
+                        responseStream << response.makeResponseMsg();
+                        boost::asio::async_write(
+                            *socket, *write_buffer,
+                            [](const boost::system::error_code &ec,
+                               size_t bytes_transferred) {});
+
                     } else {
                         response.setCode(206);
 
@@ -123,7 +211,13 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
                         response.addHeader("Content-Range", contentRange.str());
 
                         ifs.seekg(-rangeResult.second, std::ios::end);
+
                         response.getResponseBodyStrem() << ifs.rdbuf();
+                        responseStream << response.makeResponseMsg();
+                        boost::asio::async_write(
+                            *socket, *write_buffer,
+                            [](const boost::system::error_code &ec,
+                               size_t bytes_transferred) {});
                     }
                 } else if (rangeResult.first != -1 &&
                            rangeResult.second == -1) {
@@ -131,6 +225,11 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
 
                     if (rangeResult.first >= fileLength) {
                         response.setCode(416);
+                        responseStream << response.makeResponseMsg();
+                        boost::asio::async_write(
+                            *socket, *write_buffer,
+                            [](const boost::system::error_code &ec,
+                               size_t bytes_transferred) {});
                     } else {
                         std::stringstream contentRange;
                         contentRange << "bytes " << rangeResult.first << "-"
@@ -138,23 +237,58 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
                         response.addHeader("Content-Range", contentRange.str());
 
                         response.setCode(206);
-
+                        // responseStream <<
+                        // response.makeResponseMsgWithoutBody();
                         ifs.seekg(rangeResult.first, std::ios::beg);
+                        // char buf[4096];
+                        // // // ssize_t n = 0;
+                        // while (!ifs.eof()) {
+                        //     ifs.read(buf, 4096);
+                        //     // response.getResponseBodyStrem() <<buf;
+                        //     responseStream << buf;
+                        //     std::cout << "read buf" << std::endl;
+                        //     // responseStream.flush();
+                        //     // boost::asio::write(*socket,*write_buffer);
                         response.getResponseBodyStrem() << ifs.rdbuf();
+                        responseStream << response.makeResponseMsg();
+                        boost::asio::async_write(
+                            *socket, *write_buffer,
+                            [socket, request, write_buffer, &response](
+                                const boost::system::error_code &ec,
+                                size_t bytes_transferred) {
+                                std::cout << bytes_transferred << std::endl;
+                            });
+                        // }
+                        // unsigned char buf[3*1024];
+                        // ifs.read(buf,3072);
+                        // responseStream<<buf;
+                        // responseStream.flush();
+                        // response.getResponseBodyStrem() << ifs.rdbuf();
                     }
                 } else {
                     //请求从rangeResult.first到rangeResult.secode字节范围的数据
                     if (rangeResult.first > rangeResult.second) {
                         response.setCode(416);
+                        responseStream << response.makeResponseMsg();
+                        boost::asio::async_write(
+                            *socket, *write_buffer,
+                            [](const boost::system::error_code &ec,
+                               size_t bytes_transferred) {});
                     } else {
                         ifs.seekg(rangeResult.first, std::ios::beg);
 
                         auto readLength =
                             rangeResult.second - rangeResult.first + 1;
 
-                        char readbuf[readLength + 1];
+                        char readbuf[readLength];
                         ifs.read(readbuf, readLength);
                         response.getResponseBodyStrem() << readbuf;
+
+                        responseStream << response.makeResponseMsg();
+                        boost::asio::async_write(
+                            *socket, *write_buffer,
+                            [](const boost::system::error_code &ec,
+                               size_t bytes_transferred) {});
                     }
                 }
             }

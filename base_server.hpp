@@ -190,8 +190,8 @@ class ServerBase {
       if ((!matchResult.first) && (matchResult.second)) {
         ServeStatic(response, *request, responseStream, write_buffer, socket);
         matchedOne = true;
-        break;
-        // return;
+        // break;
+        return;
       } else if ((matchResult.first) && (!matchResult.second)) {
         if (res_it->second.count(request->getMethod()) > 0) {
           request->setPathParam(tempPathParamStoreMap);
@@ -220,7 +220,6 @@ class ServerBase {
       else
         got->second(response, *request);
     }
-
     responseStream << response.makeResponseMsg();
 
     boost::asio::async_write(
