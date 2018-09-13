@@ -75,9 +75,13 @@ class Response {
         this->phrase = codeMap.getPharseByCode(code);
     }
 
-    void setVersion(std::string vsn) { this->version = vsn; }
+    void setCode(int code, std::string phrase){
+        this->code = code;
+        this->phrase = phrase;
+    }
+    
 
-    void setPhrase(std::string phrase) {}
+    void setPhrase(std::string phrase) { this ->phrase =phrase; }
 
     void addHeader(std::string key, std::string val) { this->headers[key] = val;}
 

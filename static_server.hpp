@@ -138,7 +138,8 @@ double compareTime(const std::string &GmtString,
 }
 
 // ETag值匹配才发送资源
-Cond checkIfMatch(std::string &IfMatchHeadString, const std::string &filename) {
+Cond checkIfMatch(vogro::Request &request, const std::string &filename) {
+    auto IfMatchHeadString = request.getHeader("If-Match");
     auto im = trim(IfMatchHeadString);
     if (im == "") return CondNone;
     if (im == "*") return CondTrue;
@@ -146,16 +147,17 @@ Cond checkIfMatch(std::string &IfMatchHeadString, const std::string &filename) {
     return CondFalse;
 }
 
-Cond checkIfUnmodifiedSince(std::string &IfUnmodifiedSinceString,
+Cond checkIfUnmodifiedSince(vogro::Request &request,
                             const struct timespec &lastModifiedTime) {
+    auto IfUnmodifiedSinceString = request.getHeader("If-Unmodified-Since");
     auto iums = trim(IfUnmodifiedSinceString);
     if (iums == "") return CondNone;
     if (compareTime(iums, lastModifiedTime) > 0) return CondTrue;
     return CondFalse;
 }
 
-Cond checkIfNoneMatch(std::string IfNoneMatchString,
-                      const std::string &filename) {
+Cond checkIfNoneMatch(vogro::Request &request, const std::string &filename) {
+    auto IfNoneMatchString = request.getHeader("If-None-Match");
     auto inm = trim(IfNoneMatchString);
     if (inm == "") return CondNone;
     if (inm == "*" || inm == getEtag(filename)) return CondFalse;
@@ -197,7 +199,43 @@ Cond checkIfRange(vogro::Request &request, const std::string &filename,
     }
 }
 
-void CheckPreconditons() {}
+std::pair<bool, std::string> CheckPreconditons(vogro::Response &response, vogro::Request &request,
+    const struct timespec &lastModifiedTime, const std::string &filename) {
+    auto checkResult = checkIfMatch(request, filename);
+    if (checkResult == CondNone) {
+        checkResult = checkIfUnmodifiedSince(request, lastModifiedTime);
+    }
+
+    if (checkResult == CondFalse) {
+        // return StatusPreconditionFailed to client
+        response.setCode(412, "Precondition Failed");
+        return std::make_pair(true, "");
+    }
+
+    switch (checkIfNoneMatch(request, filename)) {
+        case CondFalse:
+            if (request.getMethod() == "GET" || request.getMethod() == "HEAD") {
+                response.setCode(304, "Not Modified");
+            } else {
+                response.setCode(412, "Precondition Failed");
+            }
+            return std::make_pair(true, "");
+            break;
+        case CondNone:
+            if (checkIfModifiedSince(request, lastModifiedTime) == CondFalse) {
+                response.setCode(304, "Not Modified");
+                return std::make_pair(true, "");
+            }
+            break;
+    }
+
+    auto rangeHeader = request.getHeader("Range");
+    if (rangeHeader != "" &&
+        checkIfRange(request, filename, lastModifiedTime) == CondFalse) {
+        rangeHeader = "";
+    }
+    return make_pair(false, rangeHeader);
+}
 
 template <typename socket_type>
 void ServeStatic(vogro::Response &response, vogro::Request &request,
