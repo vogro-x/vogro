@@ -52,7 +52,9 @@ struct range {
     unsigned long len;
 };
 
-
+// parseRange to parse ranges. get the start position and the range length and
+// store them to the range struct, if there are multi ranges in Ranges, them
+// store each range struct to a range vector,and return the range vector.
 std::vector<range> parseRange(std::string Ranges, const size_t total_size) {
     std::vector<range> vr;
 
@@ -80,23 +82,23 @@ std::vector<range> parseRange(std::string Ranges, const size_t total_size) {
 
         range r;
         if (n_start == -1 && n_end != -1) {
-            if(n_end > total_size) n_end =total_size;
-            r.start= total_size - n_end;
-            r.len = total_size -r.start;
+            if (n_end > total_size) n_end = total_size;
+            r.start = total_size - n_end;
+            r.len = total_size - r.start;
         } else if (n_start != -1 && n_end == -1) {
-            if(n_start >= total_size) throw "RequestedRangeNotSatisfiable";
+            if (n_start >= total_size) throw "RequestedRangeNotSatisfiable";
             r.start = n_start;
-            r.len = total_size -r.start;
+            r.len = total_size - r.start;
         } else if (n_start != -1 && n_end != -1) {
-            if(n_start > n_end) throw "RequestedRangeNotSatisfiable";
-            if(n_end >= total_size) n_end = total_size-1;
+            if (n_start > n_end) throw "RequestedRangeNotSatisfiable";
+            if (n_end >= total_size) n_end = total_size - 1;
             r.start = n_start;
-            r.len =n_end - r.start +1;
+            r.len = n_end - r.start + 1;
         } else {
             // n_start ==-1 && n_end== -1
             throw "RequestedRangeNotSatisfiable";
         }
-        vr.push_back(r);   
+        vr.push_back(r);
     }
 
     return vr;
@@ -120,7 +122,8 @@ const std::string getEtag(const std::string &filename) {
 // if Gmt time string is smaller than(earlier) modifiy time. it returns a
 // negative number, otherwise returns a positive number. if the two time is
 // equal, it returns zero.
-double compareTime(const std::string &GmtString, const std::string &filename) {
+double compareTime(const std::string &GmtString,
+                   const struct timespec &lastModifiedTime) {
     tm tm_;
     time_t t_;
     char buf[128] = {0};
@@ -130,9 +133,8 @@ double compareTime(const std::string &GmtString, const std::string &filename) {
     tm_.tm_isdst = -1;
     t_ = mktime(&tm_);
     t_ += 3600;
-    struct stat statbuf;
-    stat(filename.c_str(), &statbuf);
-    return difftime(t_, statbuf.st_mtime);
+
+    return difftime(t_, lastModifiedTime.tv_sec);  //这里只精确到秒
 }
 
 // ETag值匹配才发送资源
@@ -145,10 +147,10 @@ Cond checkIfMatch(std::string &IfMatchHeadString, const std::string &filename) {
 }
 
 Cond checkIfUnmodifiedSince(std::string &IfUnmodifiedSinceString,
-                            const std::string &filename) {
+                            const struct timespec &lastModifiedTime) {
     auto iums = trim(IfUnmodifiedSinceString);
     if (iums == "") return CondNone;
-    if (compareTime(iums, filename) > 0) return CondTrue;
+    if (compareTime(iums, lastModifiedTime) > 0) return CondTrue;
     return CondFalse;
 }
 
@@ -161,12 +163,12 @@ Cond checkIfNoneMatch(std::string IfNoneMatchString,
 }
 
 Cond checkIfModifiedSince(vogro::Request &request,
-                          const std::string &filename) {
+                          const struct timespec &lastModifiedTime) {
     if (request.getMethod() != "GET" && request.getMethod() != "HEAD")
         return CondNone;
     auto ims = request.getHeader("If-Modified-Since");
     if (ims == "") return CondNone;
-    if (compareTime(ims, filename) > 0) return CondFalse;
+    if (compareTime(ims, lastModifiedTime) > 0) return CondFalse;
     return CondTrue;
 }
 
@@ -174,7 +176,8 @@ Cond checkIfModifiedSince(vogro::Request &request,
 // if mathced, a range request,otherwise to return all the content to the client
 // more infomation, see
 // https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/If-Range
-Cond checkIfRange(vogro::Request &request, const std::string &filename) {
+Cond checkIfRange(vogro::Request &request, const std::string &filename,
+                  const struct timespec &lastModifiedTime) {
     if (request.getMethod() != "GET" && request.getMethod() != "HEAD")
         return CondNone;
 
@@ -185,7 +188,7 @@ Cond checkIfRange(vogro::Request &request, const std::string &filename) {
     std::string const ending = "GMT";
     if (std::equal(ending.rbegin(), ending.rend(), ir.rbegin())) {
         // datetime
-        return (compareTime(ir, filename) == 0) ? CondTrue : CondFalse;
+        return (compareTime(ir, lastModifiedTime) == 0) ? CondTrue : CondFalse;
     } else {
         // etag
         if (ir == "*") return CondTrue;
