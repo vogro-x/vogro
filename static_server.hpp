@@ -47,35 +47,60 @@ enum Cond {
     CondFalse,
 };
 
-struct range{
+struct range {
     unsigned long start;
     unsigned long len;
 };
 
-std::vector<std::string> split(const std::string& s, char delimiter) {
-   std::vector<std::string> tokens;
-   std::string token;
-   std::istringstream tokenStream(s);
-   while (std::getline(tokenStream, token, delimiter))
-   {
-      tokens.push_back(token);
-   }
-   return tokens;
-}
 
-
-std::vector<range> parseRange(const std::string& Ranges,size_t total_size){
+std::vector<range> parseRange(std::string Ranges, const size_t total_size) {
     std::vector<range> vr;
-    
+
+    // if startwith 'bytes '
+    if (!Ranges.rfind("bytes=", 0) == 0) return vr;
+
+    Ranges = Ranges.substr(6);
+
     std::vector<std::string> splitResult;
-    splitResult = split(Ranges,',');
-    for(auto s:splitResult){
+    splitResult = split(Ranges, ',');
+
+    for (auto s : splitResult) {
         // parse s
+        s = trim(s);
+
+        auto pos = s.find_first_of('-');
+        std::string s_start = s.substr(0, pos);
+        std::string s_end = s.substr(pos + 1);
+
+        long long n_start = (s_start == "") ? -1 : std::stoll(s_start);
+        long long n_end = (s_end == "") ? -1 : std::stoll(s_end);
+
+        unsigned long start = 0;
+        unsigned long len = 0;
+
+        range r;
+        if (n_start == -1 && n_end != -1) {
+            if(n_end > total_size) n_end =total_size;
+            r.start= total_size - n_end;
+            r.len = total_size -r.start;
+        } else if (n_start != -1 && n_end == -1) {
+            if(n_start >= total_size) throw "RequestedRangeNotSatisfiable";
+            r.start = n_start;
+            r.len = total_size -r.start;
+        } else if (n_start != -1 && n_end != -1) {
+            if(n_start > n_end) throw "RequestedRangeNotSatisfiable";
+            if(n_end >= total_size) n_end = total_size-1;
+            r.start = n_start;
+            r.len =n_end - r.start +1;
+        } else {
+            // n_start ==-1 && n_end== -1
+            throw "RequestedRangeNotSatisfiable";
+        }
+        vr.push_back(r);   
     }
 
+    return vr;
 }
-
-
 
 // getEtag to get the ETag of a static file, the Etag's format is
 // A-B-C
@@ -91,10 +116,10 @@ const std::string getEtag(const std::string &filename) {
 }
 
 // compareTime to compare a GMT time string and the time of last modification
-// of the filename,and return (GmtTime-ModifiyTime) in seconds. that is to say, 
-// if Gmt time string is smaller than(earlier) modifiy time. it returns a 
-// negative number, otherwise returns a positive number. if the two time is equal,
-// it returns zero.
+// of the filename,and return (GmtTime-ModifiyTime) in seconds. that is to say,
+// if Gmt time string is smaller than(earlier) modifiy time. it returns a
+// negative number, otherwise returns a positive number. if the two time is
+// equal, it returns zero.
 double compareTime(const std::string &GmtString, const std::string &filename) {
     tm tm_;
     time_t t_;
@@ -110,7 +135,6 @@ double compareTime(const std::string &GmtString, const std::string &filename) {
     return difftime(t_, statbuf.st_mtime);
 }
 
-
 // ETag值匹配才发送资源
 Cond checkIfMatch(std::string &IfMatchHeadString, const std::string &filename) {
     auto im = trim(IfMatchHeadString);
@@ -120,12 +144,11 @@ Cond checkIfMatch(std::string &IfMatchHeadString, const std::string &filename) {
     return CondFalse;
 }
 
-
 Cond checkIfUnmodifiedSince(std::string &IfUnmodifiedSinceString,
                             const std::string &filename) {
     auto iums = trim(IfUnmodifiedSinceString);
     if (iums == "") return CondNone;
-    if (compareTime(iums, filename)>0) return CondTrue;
+    if (compareTime(iums, filename) > 0) return CondTrue;
     return CondFalse;
 }
 
@@ -143,13 +166,14 @@ Cond checkIfModifiedSince(vogro::Request &request,
         return CondNone;
     auto ims = request.getHeader("If-Modified-Since");
     if (ims == "") return CondNone;
-    if (compareTime(ims, filename)>0) return CondFalse;
+    if (compareTime(ims, filename) > 0) return CondFalse;
     return CondTrue;
 }
 
 // If-Range's Value is ETag or Date
 // if mathced, a range request,otherwise to return all the content to the client
-// more infomation, see https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/If-Range
+// more infomation, see
+// https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/If-Range
 Cond checkIfRange(vogro::Request &request, const std::string &filename) {
     if (request.getMethod() != "GET" && request.getMethod() != "HEAD")
         return CondNone;
@@ -158,18 +182,16 @@ Cond checkIfRange(vogro::Request &request, const std::string &filename) {
     if (ir == "") return CondNone;
 
     // ir value is endwith 'GMT'
-    std::string const ending= "GMT";
-    if(std::equal(ending.rbegin(), ending.rend(), ir.rbegin())){
+    std::string const ending = "GMT";
+    if (std::equal(ending.rbegin(), ending.rend(), ir.rbegin())) {
         // datetime
-        return (compareTime(ir,filename)==0) ? CondTrue : CondFalse;
-    }else{
-        //etag
+        return (compareTime(ir, filename) == 0) ? CondTrue : CondFalse;
+    } else {
+        // etag
         if (ir == "*") return CondTrue;
         if (ir == getEtag(filename)) return CondTrue;
         return CondFalse;
-
     }
-    
 }
 
 void CheckPreconditons() {}
