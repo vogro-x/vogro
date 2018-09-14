@@ -85,6 +85,11 @@ class Response {
 
     void addHeader(std::string key, std::string val) { this->headers[key] = val;}
 
+    std::string getHeader(std::string key) {
+        auto got = this->headers.find(key);
+        return (got == this->headers.end()) ? "" : got->second;
+    }
+    
     void addBody(std::string cnt) { this->body << cnt; }
 
    
@@ -130,6 +135,7 @@ class Response {
 
         // empty line
         responseMsg << "\r\n";
+
         responseMsg << this->body.rdbuf();
         return responseMsg.str();
     }

@@ -24,6 +24,7 @@
 #include "mime_type.hpp"
 #include "request.hpp"
 #include "response.hpp"
+#include "status_code.hpp"
 #include "vogro_utils.hpp"
 
 #include <dirent.h>
@@ -55,11 +56,12 @@ struct range {
 // parseRange to parse ranges. get the start position and the range length and
 // store them to the range struct, if there are multi ranges in Ranges, them
 // store each range struct to a range vector,and return the range vector.
-std::pair<std::vector<range>,bool>parseRange(std::string Ranges, const size_t total_size) {
+std::pair<std::vector<range>, bool> parseRange(std::string Ranges,
+                                               const size_t total_size) {
     std::vector<range> vr;
 
     // if startwith 'bytes '
-    if (!Ranges.rfind("bytes=", 0) == 0) return std::make_pair(vr,false);
+    if (!Ranges.rfind("bytes=", 0) == 0) return std::make_pair(vr, false);
 
     Ranges = Ranges.substr(6);
 
@@ -86,12 +88,12 @@ std::pair<std::vector<range>,bool>parseRange(std::string Ranges, const size_t to
             r.start = total_size - n_end;
             r.len = total_size - r.start;
         } else if (n_start != -1 && n_end == -1) {
-            if (n_start >= total_size) return std::make_pair(vr,false);
+            if (n_start >= total_size) return std::make_pair(vr, false);
             // throw "RequestedRangeNotSatisfiable";
             r.start = n_start;
             r.len = total_size - r.start;
         } else if (n_start != -1 && n_end != -1) {
-            if (n_start > n_end) return std::make_pair(vr,false);
+            if (n_start > n_end) return std::make_pair(vr, false);
             // throw "RequestedRangeNotSatisfiable";
             if (n_end >= total_size) n_end = total_size - 1;
             r.start = n_start;
@@ -99,12 +101,18 @@ std::pair<std::vector<range>,bool>parseRange(std::string Ranges, const size_t to
         } else {
             // n_start ==-1 && n_end== -1
             // throw "RequestedRangeNotSatisfiable";
-            return std::make_pair(vr,false);
+            return std::make_pair(vr, false);
         }
         vr.push_back(r);
     }
 
-    return std::make_pair(vr,true);
+    return std::make_pair(vr, true);
+}
+
+unsigned long sumRanges(const std::vector<range> &vr) {
+    unsigned long sumRange = 0;
+    for (auto r : vr) sumRange += r.len;
+    return sumRange;
 }
 
 // getEtag to get the ETag of a static file, the Etag's format is
@@ -212,36 +220,36 @@ std::pair<bool, std::string> CheckPreconditons(
 
     if (checkResult == CondFalse) {
         // return StatusPreconditionFailed to client
-        response.setCode(412, "Precondition Failed");
+        response.setCode(CodePreconditionFailed_412, "Precondition Failed");
         return std::make_pair(true, "");
     }
 
     switch (checkIfNoneMatch(request, filename)) {
         case CondFalse:
             if (request.getMethod() == "GET" || request.getMethod() == "HEAD") {
-                response.setCode(304, "Not Modified");
+                response.setCode(CodeNotModified_304, "Not Modified");
             } else {
-                response.setCode(412, "Precondition Failed");
+                response.setCode(CodePreconditionFailed_412,"Precondition Failed");
             }
             return std::make_pair(true, "");
             break;
         case CondNone:
-            if (checkIfModifiedSince(request, lastModifiedTime) == CondFalse) {
-                response.setCode(304, "Not Modified");
+            auto checkIfModifiedSinceResult = checkIfModifiedSince(request, lastModifiedTime);
+            if (checkIfModifiedSinceResult == CondFalse) {
+                response.setCode(CodeNotModified_304, "Not Modified");
                 return std::make_pair(true, "");
-            }
+            }//else if (checkIfModifiedSinceResult ==CondNone){
+            //      return std::make_pair(false, "");   
+            // }
             break;
     }
 
     auto rangeHeader = request.getHeader("Range");
-    if (rangeHeader != "" &&
-        checkIfRange(request, filename, lastModifiedTime) == CondFalse) {
+    if (rangeHeader != "" && checkIfRange(request, filename, lastModifiedTime) == CondFalse) {
         rangeHeader = "";
     }
     return make_pair(false, rangeHeader);
 }
-
-
 
 template <typename socket_type>
 void ServeStatic(vogro::Response &response, vogro::Request &request,
@@ -251,7 +259,6 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
     // get current work dir
     char *buffer;
     if ((buffer = getcwd(NULL, 0)) == NULL) {
-
         // return 500 to client
         perror("getcwd error");
         exit(EXIT_FAILURE);
@@ -263,27 +270,35 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
     auto filepath = cwd + path;
 
     std::ifstream _file;
-    _file.open(filepath, std::iso::in);
+    _file.open(filepath, std::ios::in);
     if (!_file) {
         // file not found. return 404 to client
-        return
+        response.setCode(CodeNotFound_404);
+        responseStream << response.makeResponseMsg();
+        boost::asio::async_write(*socket, *write_buffer,
+                                 [](const boost::system::error_code &ec,
+                                    size_t bytes_transferred) {});
+        return;
     }
 
     // get filesize
     _file.seekg(0, std::ios::end);
-    int64_t filesize = ifs.tellg();
+    int64_t filesize = _file.tellg();
     _file.seekg(0, std::ios::beg);
 
     // get last modified time of the request file
     struct stat statbuf;
-    stat(file, &statbuf);
+    stat(filepath.c_str(), &statbuf);
     struct timespec lastModifiedTime = statbuf.st_mtim;
 
-    
     // set Last-Modified header
-    auto preconditionCheckResult = CheckPreconditons(response,request,lastModifiedTime,filepath);
-    if(preconditionCheckResult.first == true){
+    auto preconditionCheckResult = CheckPreconditons(response, request, lastModifiedTime, filepath);
+    if (preconditionCheckResult.first == true) {
         // handler end, return to client
+        responseStream << response.makeResponseMsg();
+        boost::asio::async_write(*socket, *write_buffer,
+                                 [](const boost::system::error_code &ec,
+                                    size_t bytes_transferred) {});
         return;
     }
 
@@ -293,10 +308,14 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
     auto type = mime.getMimeTypeByExt(ext);
 
     if (type == "") {
-        response.setCode(415);
-
         // media type not support, return 415 to client
-        return ;
+        response.setCode(CodeUnsupportedMediaType_415);
+        responseStream << response.makeResponseMsg();
+        boost::asio::async_write(*socket, *write_buffer,
+                                 [](const boost::system::error_code &ec,
+                                    size_t bytes_transferred) {});
+
+        return;
     }
     response.addHeader("Content-Type", type);
 
@@ -304,138 +323,171 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
     // response.addHeader("Accept-Ranges", "bytes");
     // std::vector<range> ranges;
 
-    //这里需要重新处理
-    
-    auto rangeParseResult = parseRange(preconditionCheckResult.second,filesize);
+    auto rangeParseResult = parseRange(preconditionCheckResult.second, filesize);
 
-    if(rangeParseResult.second== false){
+    if (rangeParseResult.second == false) {
         // RequestedRangeNotSatisfiable
-        return;
-    }
-
-    if(rangeParseResult.first.size()==1){
-
-    }else if(rangeParseResult.first.size()>=1){
-        
-    }
-    
-
-
-
-    if(ranges.length())
-    auto rangeValue = request.getHeader("Range");
-    if (rangeValue == "") {
-        //普通请求
-        auto etag = getEtag(filepath);
-        response.addHeader("ETag", etag);
-        response.getResponseBodyStrem() << ifs.rdbuf();
-
+        response.setCode(CodeRequestedRangeNotSatisfiable_416);
         responseStream << response.makeResponseMsg();
         boost::asio::async_write(*socket, *write_buffer,
                                  [](const boost::system::error_code &ec,
                                     size_t bytes_transferred) {});
-
-    } else {
-        //范围请求
-        auto rangeResult = parseRange(rangeValue);
-        if (rangeResult.first == -1 && rangeResult.second != -1) {
-            //请求最后的rangeResult.secode字节的数据
-
-            if (rangeResult.first >= fileLength) {
-                response.setCode(416);
-                responseStream << response.makeResponseMsg();
-                boost::asio::async_write(*socket, *write_buffer,
-                                         [](const boost::system::error_code &ec,
-                                            size_t bytes_transferred) {});
-
-            } else {
-                response.setCode(206);
-
-                std::stringstream contentRange;
-                contentRange << "bytes " << fileLength - rangeResult.second
-                             << "-" << fileLength - 1 << '/' << fileLength;
-                response.addHeader("Content-Range", contentRange.str());
-
-                ifs.seekg(-rangeResult.second, std::ios::end);
-
-                response.getResponseBodyStrem() << ifs.rdbuf();
-                responseStream << response.makeResponseMsg();
-                boost::asio::async_write(*socket, *write_buffer,
-                                         [](const boost::system::error_code &ec,
-                                            size_t bytes_transferred) {});
-            }
-        } else if (rangeResult.first != -1 && rangeResult.second == -1) {
-            //请求从rangeResult.first到文件结尾的数据
-
-            if (rangeResult.first >= fileLength) {
-                response.setCode(416);
-                responseStream << response.makeResponseMsg();
-                boost::asio::async_write(*socket, *write_buffer,
-                                         [](const boost::system::error_code &ec,
-                                            size_t bytes_transferred) {});
-            } else {
-                std::stringstream contentRange;
-                contentRange << "bytes " << rangeResult.first << "-"
-                             << fileLength - 1 << "/" << fileLength;
-                response.addHeader("Content-Range", contentRange.str());
-
-                response.setCode(206);
-                // responseStream <<
-                // response.makeResponseMsgWithoutBody();
-                ifs.seekg(rangeResult.first, std::ios::beg);
-                // char buf[4096];
-                // // // ssize_t n = 0;
-                // while (!ifs.eof()) {
-                //     ifs.read(buf, 4096);
-                //     // response.getResponseBodyStrem() <<buf;
-                //     responseStream << buf;
-                //     std::cout << "read buf" << std::endl;
-                //     // responseStream.flush();
-                //     // boost::asio::write(*socket,*write_buffer);
-                response.getResponseBodyStrem() << ifs.rdbuf();
-                responseStream << response.makeResponseMsg();
-                boost::asio::async_write(
-                    *socket, *write_buffer,
-                    [socket, request, write_buffer, &response](
-                        const boost::system::error_code &ec,
-                        size_t bytes_transferred) {
-                        std::cout << bytes_transferred << std::endl;
-                    });
-                // }
-                // unsigned char buf[3*1024];
-                // ifs.read(buf,3072);
-                // responseStream<<buf;
-                // responseStream.flush();
-                // response.getResponseBodyStrem() << ifs.rdbuf();
-            }
-        } else {
-            //请求从rangeResult.first到rangeResult.secode字节范围的数据
-            if (rangeResult.first > rangeResult.second) {
-                response.setCode(416);
-                responseStream << response.makeResponseMsg();
-                boost::asio::async_write(*socket, *write_buffer,
-                                         [](const boost::system::error_code &ec,
-                                            size_t bytes_transferred) {});
-            } else {
-                ifs.seekg(rangeResult.first, std::ios::beg);
-
-                auto readLength = rangeResult.second - rangeResult.first + 1;
-
-                char readbuf[readLength];
-                ifs.read(readbuf, readLength);
-                response.getResponseBodyStrem() << readbuf;
-
-                responseStream << response.makeResponseMsg();
-                boost::asio::async_write(*socket, *write_buffer,
-                                         [](const boost::system::error_code &ec,
-                                            size_t bytes_transferred) {});
-            }
-        }
+        return;
     }
+
+    std::vector<range> ranges = rangeParseResult.first;
+
+    if (sumRanges(ranges) > filesize) ranges.clear();
+
+    unsigned long sendSize = 0;
+    if (ranges.size() == 1) {
+        auto range = ranges[0];
+        sendSize = range.len;
+        std::stringstream contentRange;
+        contentRange << "bytes " << range.start << "-"
+                     << (range.start + range.len - 1) << "/" << filesize;
+        response.setCode(CodePartialContent_206);
+        response.addHeader("Content-Range", contentRange.str());
+
+        response.addHeader("Accept-Ranges", "bytes");
+
+        if (response.getHeader("Content-Encoding") == "")
+            response.addHeader("Content-Length",std::to_string(sendSize));
+
+        if (request.getMethod() == "HEAD") {
+                responseStream << response.makeResponseMsg();
+                boost::asio::async_write(*socket, *write_buffer,
+                                         [](const boost::system::error_code &ec,
+                                            size_t bytes_transferred) {});
+        }else {
+            _file.seekg(range.start, std::ios::beg);
+
+            auto readLength = range.len;
+
+            char readbuf[readLength];
+            _file.read(readbuf, readLength);
+            response.getResponseBodyStrem() << readbuf;
+            responseStream << response.makeResponseMsg();
+            boost::asio::async_write(*socket, *write_buffer,
+                                     [](const boost::system::error_code &ec,
+                                        size_t bytes_transferred) {});
+        }
+
+    } else if (ranges.size() >= 2) {
+        // multipart response
+    }
+    return ;
+
+    // auto rangeValue = request.getHeader("Range");
+    // if (rangeValue == "") {
+    //     //普通请求
+    //     auto etag = getEtag(filepath);
+    //     response.addHeader("ETag", etag);
+    //     response.getResponseBodyStrem() << ifs.rdbuf();
+
+    //     responseStream << response.makeResponseMsg();
+    //     boost::asio::async_write(*socket, *write_buffer,
+    //                              [](const boost::system::error_code &ec,
+    //                                 size_t bytes_transferred) {});
+
+    // } else {
+    //     //范围请求
+    //     auto rangeResult = parseRange(rangeValue);
+    //     if (rangeResult.first == -1 && rangeResult.second != -1) {
+    //         //请求最后的rangeResult.secode字节的数据
+
+    //         if (rangeResult.first >= fileLength) {
+    //             response.setCode(416);
+    //             responseStream << response.makeResponseMsg();
+    //             boost::asio::async_write(*socket, *write_buffer,
+    //                                      [](const boost::system::error_code &ec,
+    //                                         size_t bytes_transferred) {});
+
+    //         } else {
+    //             response.setCode(206);
+
+    //             std::stringstream contentRange;
+    //             contentRange << "bytes " << fileLength - rangeResult.second
+    //                          << "-" << fileLength - 1 << '/' << fileLength;
+    //             response.addHeader("Content-Range", contentRange.str());
+
+    //             ifs.seekg(-rangeResult.second, std::ios::end);
+
+    //             response.getResponseBodyStrem() << ifs.rdbuf();
+    //             responseStream << response.makeResponseMsg();
+    //             boost::asio::async_write(*socket, *write_buffer,
+    //                                      [](const boost::system::error_code &ec,
+    //                                         size_t bytes_transferred) {});
+    //         }
+    //     } else if (rangeResult.first != -1 && rangeResult.second == -1) {
+    //         //请求从rangeResult.first到文件结尾的数据
+
+    //         if (rangeResult.first >= fileLength) {
+    //             response.setCode(416);
+    //             responseStream << response.makeResponseMsg();
+    //             boost::asio::async_write(*socket, *write_buffer,
+    //                                      [](const boost::system::error_code &ec,
+    //                                         size_t bytes_transferred) {});
+    //         } else {
+    //             std::stringstream contentRange;
+    //             contentRange << "bytes " << rangeResult.first << "-"
+    //                          << fileLength - 1 << "/" << fileLength;
+    //             response.addHeader("Content-Range", contentRange.str());
+
+    //             response.setCode(206);
+    //             // responseStream <<
+    //             // response.makeResponseMsgWithoutBody();
+    //             ifs.seekg(rangeResult.first, std::ios::beg);
+    //             // char buf[4096];
+    //             // // // ssize_t n = 0;
+    //             // while (!ifs.eof()) {
+    //             //     ifs.read(buf, 4096);
+    //             //     // response.getResponseBodyStrem() <<buf;
+    //             //     responseStream << buf;
+    //             //     std::cout << "read buf" << std::endl;
+    //             //     // responseStream.flush();
+    //             //     // boost::asio::write(*socket,*write_buffer);
+    //             response.getResponseBodyStrem() << ifs.rdbuf();
+    //             responseStream << response.makeResponseMsg();
+    //             boost::asio::async_write(
+    //                 *socket, *write_buffer,
+    //                 [socket, request, write_buffer, &response](
+    //                     const boost::system::error_code &ec,
+    //                     size_t bytes_transferred) {
+    //                     std::cout << bytes_transferred << std::endl;
+    //                 });
+    //             // }
+    //             // unsigned char buf[3*1024];
+    //             // ifs.read(buf,3072);
+    //             // responseStream<<buf;
+    //             // responseStream.flush();
+    //             // response.getResponseBodyStrem() << ifs.rdbuf();
+    //         }
+    //     } else {
+    //         //请求从rangeResult.first到rangeResult.secode字节范围的数据
+    //         if (rangeResult.first > rangeResult.second) {
+    //             response.setCode(416);
+    //             responseStream << response.makeResponseMsg();
+    //             boost::asio::async_write(*socket, *write_buffer,
+    //                                      [](const boost::system::error_code &ec,
+    //                                         size_t bytes_transferred) {});
+    //         } else {
+    //             ifs.seekg(rangeResult.first, std::ios::beg);
+
+    //             auto readLength = rangeResult.second - rangeResult.first + 1;
+
+    //             char readbuf[readLength];
+    //             ifs.read(readbuf, readLength);
+    //             response.getResponseBodyStrem() << readbuf;
+
+    //             responseStream << response.makeResponseMsg();
+    //             boost::asio::async_write(*socket, *write_buffer,
+    //                                      [](const boost::system::error_code &ec,
+    //                                         size_t bytes_transferred) {});
+    //         }
+    //     }
+    // }
 }
 
-return;
-
-}
 
 #endif
