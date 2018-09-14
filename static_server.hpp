@@ -55,11 +55,11 @@ struct range {
 // parseRange to parse ranges. get the start position and the range length and
 // store them to the range struct, if there are multi ranges in Ranges, them
 // store each range struct to a range vector,and return the range vector.
-std::vector<range> parseRange(std::string Ranges, const size_t total_size) {
+std::pair<std::vector<range>,bool>parseRange(std::string Ranges, const size_t total_size) {
     std::vector<range> vr;
 
     // if startwith 'bytes '
-    if (!Ranges.rfind("bytes=", 0) == 0) return vr;
+    if (!Ranges.rfind("bytes=", 0) == 0) return std::make_pair(vr,false);
 
     Ranges = Ranges.substr(6);
 
@@ -86,22 +86,25 @@ std::vector<range> parseRange(std::string Ranges, const size_t total_size) {
             r.start = total_size - n_end;
             r.len = total_size - r.start;
         } else if (n_start != -1 && n_end == -1) {
-            if (n_start >= total_size) throw "RequestedRangeNotSatisfiable";
+            if (n_start >= total_size) return std::make_pair(vr,false);
+            // throw "RequestedRangeNotSatisfiable";
             r.start = n_start;
             r.len = total_size - r.start;
         } else if (n_start != -1 && n_end != -1) {
-            if (n_start > n_end) throw "RequestedRangeNotSatisfiable";
+            if (n_start > n_end) return std::make_pair(vr,false);
+            // throw "RequestedRangeNotSatisfiable";
             if (n_end >= total_size) n_end = total_size - 1;
             r.start = n_start;
             r.len = n_end - r.start + 1;
         } else {
             // n_start ==-1 && n_end== -1
-            throw "RequestedRangeNotSatisfiable";
+            // throw "RequestedRangeNotSatisfiable";
+            return std::make_pair(vr,false);
         }
         vr.push_back(r);
     }
 
-    return vr;
+    return std::make_pair(vr,true);
 }
 
 // getEtag to get the ETag of a static file, the Etag's format is
@@ -238,31 +241,7 @@ std::pair<bool, std::string> CheckPreconditons(
     return make_pair(false, rangeHeader);
 }
 
-/*****
- *
- * int main()
-{
-     fstream _file;
-     _file.open(FILENAME,ios::in);
-     if(!_file)
-     {
-         cout<<FILENAME<<"没有被创建";
-      }
-      else
-      {
-          cout<<FILENAME<<"已经存在";
-      }
-      return 0;
-}
- *
- *
- *
- *
- *
- *
- *
- *
- */
+
 
 template <typename socket_type>
 void ServeStatic(vogro::Response &response, vogro::Request &request,
@@ -300,6 +279,14 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
     stat(file, &statbuf);
     struct timespec lastModifiedTime = statbuf.st_mtim;
 
+    
+    // set Last-Modified header
+    auto preconditionCheckResult = CheckPreconditons(response,request,lastModifiedTime,filepath);
+    if(preconditionCheckResult.first == true){
+        // handler end, return to client
+        return;
+    }
+
     // get file type
     auto ext = getFileExtension(filepath);
     MimeTypeMap &mime = MimeTypeMap::GetInstance();
@@ -309,14 +296,33 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
         response.setCode(415);
 
         // media type not support, return 415 to client
+        return ;
+    }
+    response.addHeader("Content-Type", type);
+
+    // response.addHeader("Connection", "Keep-Alive");
+    // response.addHeader("Accept-Ranges", "bytes");
+    // std::vector<range> ranges;
+
+    //这里需要重新处理
+    
+    auto rangeParseResult = parseRange(preconditionCheckResult.second,filesize);
+
+    if(rangeParseResult.second== false){
+        // RequestedRangeNotSatisfiable
+        return;
     }
 
-    response.addHeader("Connection", "Keep-Alive");
-    response.addHeader("Content-Type", type);
-    response.addHeader("Accept-Ranges", "bytes");
+    if(rangeParseResult.first.size()==1){
 
-   
+    }else if(rangeParseResult.first.size()>=1){
+        
+    }
+    
 
+
+
+    if(ranges.length())
     auto rangeValue = request.getHeader("Range");
     if (rangeValue == "") {
         //普通请求
@@ -429,7 +435,7 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
 }
 
 return;
-}
+
 }
 
 #endif
