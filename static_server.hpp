@@ -368,14 +368,17 @@ void ServeStatic(vogro::Response& response, vogro::Request& request,
 
         return;
     }
+
     response.addHeader("Content-Type", type);
 
 
     if(preconditionCheckResult.second == ""){
         response.setCode(CodeOK_200);
+        
         response.addHeader("ETag",getEtag(filepath));
         response.addHeader("Last-Modified",getGmtLastModifiedTime(lastModifiedTime));
         response.getResponseBodyStrem() << _file.rdbuf();
+
         responseStream << response.makeResponseMsg();
         boost::asio::async_write(*socket, *write_buffer,
             [](const boost::system::error_code &ec,size_t bytes_transferred) {});
@@ -417,8 +420,6 @@ void ServeStatic(vogro::Response& response, vogro::Request& request,
         response.addHeader("Accept-Ranges", "bytes");
         if (response.getHeader("Content-Encoding") == ""){
             response.addHeader("Content-Length", std::to_string(range.len));
-            std::cout<<"content-length:"<<range.len<<std::endl;
-            std::cout<<response.getHeader("Content-Length")<<std::endl;
         }
 
         if (request.getMethod() == "HEAD") {
@@ -453,16 +454,6 @@ void ServeStatic(vogro::Response& response, vogro::Request& request,
                     boost::asio::write(*socket, *write_buffer);//,
                     //[](const boost::system::error_code& ec, size_t bytes_transferred) {});
                 }
-
-            // while(!_file.eof()){
-            //     _file.read(&str[0],readLength);
-
-            // }
-
-            // responseStream << str;
-            // boost::asio::async_write(
-            //     *socket, *write_buffer,
-            //     [](const boost::system::error_code& ec, size_t bytes_transferred) {});
         }
             return;
 
