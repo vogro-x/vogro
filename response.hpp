@@ -18,15 +18,17 @@
 
 #include <ctime>
 #include <iostream>
-#include <sstream>  // std::stringstream
+#include <sstream> // std::stringstream
+#include <string>
 #include <unordered_map>
 
 #include "common.hpp"
 #include "status.hpp"
 
 namespace vogro {
+
 class Response {
-   private:
+private:
     int code;
 
     std::string version;
@@ -37,19 +39,21 @@ class Response {
 
     std::stringstream body;
 
-    std::string getCurrentCMTTime() {
+    std::string getCurrentCMTTime()
+    {
         time_t rawTime;
-        struct tm *timeInfo;
-        char szTemp[30] = {0};
+        struct tm* timeInfo;
+        char szTemp[30] = { 0 };
         time(&rawTime);
         timeInfo = gmtime(&rawTime);
         strftime(szTemp, sizeof(szTemp), "%a, %d %b %Y %H:%M:%S GMT", timeInfo);
         return std::string(szTemp);
     }
 
-   public:
+public:
     //构造函数
-    Response() {
+    Response()
+    {
         // set default code,version,phare
         this->code = CodeOK_200;
         this->version = "1.1";
@@ -71,32 +75,72 @@ class Response {
 
     void setCode(int code) {
         this->code = code;
-        vogro::StatusCodeMap &codeMap = vogro::StatusCodeMap::GetInstance();
+        vogro::StatusCodeMap& codeMap = vogro::StatusCodeMap::GetInstance();
         this->phrase = codeMap.getPharseByCode(code);
     }
 
-    void setCode(int code, std::string phrase){
+    void setCode(int code, std::string phrase) {
         this->code = code;
         this->phrase = phrase;
     }
-    
 
-    void setPhrase(std::string phrase) { this ->phrase =phrase; }
+    void setPhrase(std::string phrase) { this->phrase = phrase; }
 
-    void addHeader(std::string key, std::string val) { this->headers[key] = val;}
+    void addHeader(std::string key, std::string val) { this->headers[key] = val; }
 
     std::string getHeader(std::string key) {
         auto got = this->headers.find(key);
         return (got == this->headers.end()) ? "" : got->second;
     }
-    
+
+    /************************************************************************
+    Cookie Syntax
+
+        Set-Cookie: <cookie-name>=<cookie-value> 
+        Set-Cookie: <cookie-name>=<cookie-value>; Expires=<date>
+        Set-Cookie: <cookie-name>=<cookie-value>; Max-Age=<non-zero-digit>
+        Set-Cookie: <cookie-name>=<cookie-value>; Domain=<domain-value>
+        Set-Cookie: <cookie-name>=<cookie-value>; Path=<path-value>
+        Set-Cookie: <cookie-name>=<cookie-value>; Secure
+        Set-Cookie: <cookie-name>=<cookie-value>; HttpOnly
+        Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Strict
+        Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Lax
+
+        // Multiple directives are also possible, for example:
+        Set-Cookie: <cookie-name>=<cookie-value>; Domain=<domain-value>; Secure; HttpOnly
+
+        to view more, see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie
+     **************************************************************************/
+
+
+    void setCookie(std::string k, std::string v, std::string path = "/", std::string domain = "", bool httpOnly = true,
+        std::string expires = "", std::string maxAge = "")
+    {
+        std::stringstream ss;
+        ss << k << "=" << v;
+
+        if(path != "/"){   
+            ss <<"; "<< "Path=" <<path;  // if path not set, the default path is "/"
+        }
+
+        if(domain !=""){
+            ss <<"; "<< "Domain=" << domain; 
+        }
+
+        if(httpOnly){
+            ss <<"; "<<"HttpOnly";
+        }
+
+        this->addHeader("Set-Cookie",ss.str());
+    }
+
     void addBody(std::string cnt) { this->body << cnt; }
 
-   
-    std::stringstream & getResponseBodyStrem(){return body; }
+    std::stringstream& getResponseBodyStrem() { return body; }
 
-    std::string makeResponseMsgWithoutBody(){
-         std::stringstream responseMsg;
+    std::string makeResponseMsgWithoutBody()
+    {
+        std::stringstream responseMsg;
 
         // add  response line
         responseMsg << "HTTP/" << this->version << " " << this->code << " "
@@ -110,8 +154,8 @@ class Response {
         return responseMsg.str();
     }
 
-    
-    std::string  makeResponseMsg() {
+    std::string makeResponseMsg()
+    {
         std::stringstream responseMsg;
 
         // add  response line
@@ -140,6 +184,6 @@ class Response {
         return responseMsg.str();
     }
 };
-}  // namespace vogro
+} // namespace vogro
 
 #endif
