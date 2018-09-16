@@ -30,6 +30,7 @@
 #include "response.hpp"
 #include "static.hpp"
 #include "utils.hpp"
+#include "group.hpp"
 
 namespace vogro {
 
@@ -256,6 +257,11 @@ public:
 
     void DELETE(std::string userPath, std::function<void(vogro::Context&)> handler) {
         this->user_resource[userPath]["DELETE"].push_back(handler);
+    }
+
+    std::shared_ptr<vogro::Group> makeGroup(std::string prefix,std::function<void(vogro::Context&)> handler) {
+        auto group = std::shared_ptr<vogro::Group>(new vogro::Group(prefix,user_resource));
+        return group;
     }
 
     void customErrorHandler(unsigned short code, std::function<void(vogro::Request&, vogro::Response&)> handler) {

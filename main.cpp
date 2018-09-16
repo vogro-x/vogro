@@ -1,12 +1,13 @@
+#include "group.hpp"
 #include "http.hpp"
 
 int main()
 {
-    vogro::Server server(12345, 4);
+    vogro::Server server(12532, 4);
 
     server.Use([](vogro::Context& ctx) {
-        std::cout<<"coming................"<<std::endl;
-        ctx.setValue("key","hhhhhh");
+        std::cout << "coming................" << std::endl;
+        ctx.setValue("key", "hhhhhh");
         ctx.Next();
     });
 
@@ -17,7 +18,7 @@ int main()
 
     server.addRoute("/username/{str:name}/", "GET", [](vogro::Context& ctx) {
         auto name = ctx.request->getPathParam("name");
-       auto key= ctx.getValue("key");
+        auto key = ctx.getValue("key");
         ctx.response->addBody(name);
         ctx.response->addBody(key);
         return;
@@ -54,6 +55,25 @@ int main()
         response.addBody("<h1>Custom Not Found</h1>");
         return;
     });
+
+    auto userGroup = server.makeGroup("/user", [](vogro::Context& ctx) { ctx.Next(); });
+    {
+        userGroup->GET("/get", [](vogro::Context& ctx) {
+            ctx.response->addBody("get");
+        });
+
+        userGroup->POST("/post", [](vogro::Context& ctx) {
+            ctx.response->addBody("post");
+        });
+
+        userGroup->PUT("/put", [](vogro::Context& ctx) {
+            ctx.response->addBody("put");
+        });
+
+        userGroup->DELETE("/delete", [](vogro::Context& ctx) {
+            ctx.response->addBody("delete");
+        });
+    }
 
     server.runServer();
     return 0;
