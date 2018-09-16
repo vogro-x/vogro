@@ -1,5 +1,5 @@
+#include "handlers.hpp"
 #include "http.hpp"
-
 int main()
 {
     vogro::Server server(12532, 4);
@@ -57,9 +57,7 @@ int main()
 
     auto userGroup = server.makeGroup("/user", [](vogro::Context& ctx) { ctx.Next(); });
     {
-        userGroup->GET("/get", [](vogro::Context& ctx) {
-            ctx.response->addBody("get");
-        });
+        userGroup->GET("/get", TestHandler1, TestHandler2, TestHandler3);
 
         userGroup->POST("/post", [](vogro::Context& ctx) {
             ctx.response->addBody("post");

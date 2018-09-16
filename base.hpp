@@ -40,32 +40,55 @@ private:
     std::string prefix_;
     RegistrationCenter& rc_;
 
+    Logger<TerminalPolicy>& logger = Logger<TerminalPolicy>::getLoggerInstance("vogro.log");
+
+    void addHandler(std::string path, std::string method) {
+        logger.LOG_INFO(path,method,"handlers register ok");
+    }
+
+    template <typename First, typename... Rest>
+    void addHandler(std::string path, std::string method, const First &parm1, const Rest &... parm){
+        this->rc_[path][method].push_back(parm1);
+        addHandler(path,method,parm...);
+    }
+
 public:
     Group(std::string prefix, RegistrationCenter& rc)
         : prefix_(prefix)
-        , rc_(rc)
+        , rc_(rc){}
+
+    template <typename... Args>
+    void GET(std::string userPath, const Args &... args)
     {
+        if(prefix_.back() == '/') prefix_.pop_back();
+        auto path = prefix_+ userPath;
+        this->addHandler(path,"GET", args...);
     }
 
-    void GET(std::string userPath, std::function<void(vogro::Context&)> handler)
-    {
-        this->rc_[prefix_ + userPath]["GET"].push_back(handler);
+    template <typename... Args>
+    void POST(std::string userPath, const Args &... args)
+    {   
+        if(prefix_.back() == '/') prefix_.pop_back();
+        auto path = prefix_+userPath;
+         this->addHandler(path,"POST", args...);
     }
 
-    void POST(std::string userPath, std::function<void(vogro::Context&)> handler)
-    {
-        this->rc_[prefix_ + userPath]["POST"].push_back(handler);
+    template <typename... Args>
+    void PUT(std::string userPath, const Args &... args)
+    {   
+        if(prefix_.back() == '/') prefix_.pop_back();
+        auto path = prefix_+userPath;
+         this->addHandler(path,"PUT", args...);
     }
 
-    void PUT(std::string userPath, std::function<void(vogro::Context&)> handler)
-    {
-        this->rc_[prefix_ + userPath]["PUT"].push_back(handler);
+    template <typename... Args>
+    void DELETE(std::string userPath, const Args &... args)
+    {   
+        if(prefix_.back() == '/') prefix_.pop_back();
+        auto path = prefix_+userPath;
+         this->addHandler(path,"DELETE", args...);
     }
 
-    void DELETE(std::string userPath, std::function<void(vogro::Context&)> handler)
-    {
-        this->rc_[prefix_ + userPath]["DELETE"].push_back(handler);
-    }
 };
 
 
@@ -294,7 +317,6 @@ public:
 
     std::shared_ptr<vogro::Group> makeGroup(std::string prefix,std::function<void(vogro::Context&)> handler) {
         auto group = std::shared_ptr<vogro::Group>(new vogro::Group(prefix,user_resource));
-        
         return group;
     }
 
