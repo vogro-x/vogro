@@ -30,15 +30,15 @@ class Server : public ServerBase<HTTP> {
    public:
     Server(unsigned short port = 8080, size_t num_threads = 4)
         : ServerBase<HTTP>::ServerBase(port, num_threads) {
-        default_error_handler = [](vogro::Context& ctx) {
-            auto code = ctx.response->getCode();
+        default_error_handler = [](vogro::Request& request, vogro::Response& response) {
+            auto code = response.getCode();
             vogro::StatusCodeMap& codeMap = vogro::StatusCodeMap::GetInstance();
             auto pharse = codeMap.getPharseByCode(code);
             std::stringstream ss;
             ss << "<center><h1>" << code << " " << pharse << "</h1><br/>";
             ss << "<a href='https:://github.com/Andrewpqc/vogro'>vogro(" << 0.1
                << ")</a></center>";
-            ctx.response->addBody(ss.str());
+            response.addBody(ss.str());
             return;
         };
     }

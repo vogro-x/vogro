@@ -25,15 +25,15 @@
 #include <vector>
 
 #include "context.hpp"
+#include "logger.hpp"
 #include "request.hpp"
 #include "response.hpp"
 #include "static.hpp"
-#include "logger.hpp"
 #include "utils.hpp"
 
 namespace vogro {
 
-typedef std::map<std::string, std::unordered_map<std::string, std::vector<std::function<void(vogro::Context &)>>>> RegistrationCenter;
+typedef std::map<std::string, std::unordered_map<std::string, std::vector<std::function<void(vogro::Context&)>>>> RegistrationCenter;
 
 template <typename socket_type>
 class ServerBase {
@@ -50,8 +50,8 @@ protected:
     RegistrationCenter user_resource;
     RegistrationCenter vogro_resource;
 
-    std::function<void(vogro::Context &)> default_error_handler;
-    std::unordered_map<unsigned short, std::function<void(vogro::Context &)>> error_handlers;
+    std::function<void(vogro::Request&, vogro::Response&)> default_error_handler;
+    std::unordered_map<unsigned short, std::function<void(vogro::Request&, vogro::Response&)>> error_handlers;
 
     std::vector<std::function<void(vogro::Context&)>> globalMiddlewares;
 
@@ -63,18 +63,20 @@ public:
     ServerBase(unsigned short port, size_t num_threads)
         : endpoint(boost::asio::ip::tcp::v4(), port)
         , acceptor(io_svc, endpoint)
-        , thread_num(num_threads){}
+        , thread_num(num_threads)
+    {
+    }
 
     void runServer()
     {
-        for (auto it = user_resource.begin(); it != user_resource.end(); it++) 
+        for (auto it = user_resource.begin(); it != user_resource.end(); it++)
             all_resources.push_back(it);
-        
-        for (auto it = vogro_resource.begin(); it != vogro_resource.end(); it++) 
+
+        for (auto it = vogro_resource.begin(); it != vogro_resource.end(); it++)
             all_resources.push_back(it);
-        
+
         logger.LOG_INFO("vogro server is linstening on port:", 12345);
-        
+
         accept();
 
         // n-1 thread pool
@@ -111,13 +113,10 @@ public:
                         boost::asio::async_read(*socket, *read_buffer,
                             boost::asio::transfer_exactly(
                                 std::stoull(request->getHeader("Content-Length")) - num_additional_bytes),
-                            [this, socket, read_buffer, request](
-                                const boost::system::error_code& ec,
+                            [this, socket, read_buffer, request](const boost::system::error_code& ec,
                                 size_t bytes_transferred) {
                                 if (!ec) {
-                                    request->ReadJSON(std::shared_ptr<std::istream>(
-                                        new std::istream(read_buffer.get())));
-
+                                    request->ReadJSON(std::shared_ptr<std::istream>(new std::istream(read_buffer.get())));
                                     respond(socket, request);
                                 }
                             });
@@ -169,12 +168,8 @@ public:
         return req;
     }
 
-    void respond(std::shared_ptr<socket_type> socket,
-        std::shared_ptr<vogro::Request> request) const
+    void respond(std::shared_ptr<socket_type> socket, std::shared_ptr<vogro::Request> request) const
     {
-        // 对请求路径和方法进行匹配查找，并生成响应
-        // vogro::Response response;
-
         auto write_buffer = std::make_shared<boost::asio::streambuf>();
         std::ostream responseStream(write_buffer.get());
 
@@ -182,7 +177,6 @@ public:
 
         bool matchedOne = false;
         for (auto res_it : all_resources) {
-
             std::map<std::string, std::string> tempPathParamStoreMap;
             auto matchResult = urlMatch(request->getPath(), res_it->first, tempPathParamStoreMap);
             if ((!matchResult.first) && (matchResult.second)) {
@@ -191,19 +185,19 @@ public:
                 // break;
                 return;
             } else if ((matchResult.first) && (!matchResult.second)) {
-                    Context ctx(request,response,
-                      globalMiddlewares,
-                      res_it->second[request->getMethod()]);
-
                 if (res_it->second.count(request->getMethod()) > 0) {
                     request->setPathParam(tempPathParamStoreMap);
 
-                    if(globalMiddlewares.begin()!=globalMiddlewares.end()){
-                        (*(globalMiddlewares.begin()))(ctx); // exec handler
-                    }else{
-                      if(res_it->second[request->getMethod()].begin()!=res_it->second[request->getMethod()].end()){
-                        (*(res_it->second[request->getMethod()].begin()))(ctx);
-                      }
+                    Context ctx(request, response,
+                        globalMiddlewares,
+                        res_it->second[request->getMethod()]);
+
+                    if (globalMiddlewares.begin() != globalMiddlewares.end()) {
+                        (*(globalMiddlewares.begin()))(ctx); 
+                    } else {
+                        if (res_it->second[request->getMethod()].begin() != res_it->second[request->getMethod()].end()) {
+                            (*(res_it->second[request->getMethod()].begin()))(ctx);
+                        }
                     }
 
                     matchedOne = true;
@@ -212,23 +206,23 @@ public:
                     response->setCode(405);
                     auto got = error_handlers.find(405);
                     if (got == error_handlers.end())
-                        default_error_handler(ctx);
+                        default_error_handler(*request, *response);
                     else
-                        got->second(ctx);
+                        got->second(*request, *response);
                     matchedOne = true;
                     break;
                 }
             }
         }
 
-        // if (!matchedOne) {
-        //     response->setCode(404);
-        //     auto got = error_handlers.find(404);
-        //     if (got == error_handlers.end())
-        //         default_error_handler(ctx);
-        //     else
-        //         got->second(ctx);
-        // }
+        if (!matchedOne) {
+            response->setCode(404);
+            auto got = error_handlers.find(404);
+            if (got == error_handlers.end())
+                default_error_handler(*request, *response);
+            else
+                got->second(*request, *response);
+        }
         responseStream << response->makeResponseMsg();
 
         boost::asio::async_write(
@@ -236,8 +230,7 @@ public:
             [this, socket, request, write_buffer, &response](
                 const boost::system::error_code& ec, size_t bytes_transferred) {
 
-                logger.LOG_DEBUG(request->getRemoteIP(), request->getMethod(),
-                    request->getPath(), response->getCode());
+                logger.LOG_DEBUG(request->getRemoteIP(), request->getMethod(), request->getPath(), response->getCode());
 
                 if (!ec && std::stof(request->getVersion()) > 1.05)
                     process_request_and_respond(socket);
@@ -245,19 +238,34 @@ public:
         return;
     }
 
-    void addRoute(std::string userPath, std::string method, std::function<void(vogro::Context&)> handler)
-    {
+    void addRoute(std::string userPath, std::string method, std::function<void(vogro::Context&)> handler){
         this->user_resource[userPath][method].push_back(handler);
     }
 
-    void customErrorHandler(unsigned short code,std::function<void(vogro::Context&)> handler)
-    {
+    void Get(std::string userPath, std::function<void(vogro::Context&)> handler) {
+        this->user_resource[userPath]["GET"].push_back(handler);
+    }
+
+    void POST(std::string userPath, std::function<void(vogro::Context&)> handler) {
+        this->user_resource[userPath]["POST"].push_back(handler);
+    }
+
+    void PUT(std::string userPath, std::function<void(vogro::Context&)> handler) {
+        this->user_resource[userPath]["PUT"].push_back(handler);
+    }
+
+    void DELETE(std::string userPath, std::function<void(vogro::Context&)> handler) {
+        this->user_resource[userPath]["DELETE"].push_back(handler);
+    }
+
+    void customErrorHandler(unsigned short code, std::function<void(vogro::Request&, vogro::Response&)> handler) {
         this->error_handlers[code] = handler;
     }
 
-    void use(std::function<void(vogro::Context&)> middleware){
+    void Use(std::function<void(vogro::Context&)> middleware) {
         this->globalMiddlewares.push_back(middleware);
     }
+
 
 };
 

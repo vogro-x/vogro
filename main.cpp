@@ -4,7 +4,7 @@ int main()
 {
     vogro::Server server(12345, 4);
 
-    server.use([](vogro::Context& ctx) {
+    server.Use([](vogro::Context& ctx) {
         std::cout<<"coming................"<<std::endl;
         ctx.setValue("key","hhhhhh");
         ctx.Next();
@@ -50,8 +50,8 @@ int main()
         return;
     });
 
-    server.customErrorHandler(404, [](vogro::Context& ctx) {
-        ctx.response->addBody("<h1>Custom Not Found</h1>");
+    server.customErrorHandler(404, [](vogro::Request& request, vogro::Response& response) {
+        response.addBody("<h1>Custom Not Found</h1>");
         return;
     });
 
