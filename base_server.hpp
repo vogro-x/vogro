@@ -192,10 +192,8 @@ public:
                 return;
             } else if ((matchResult.first) && (!matchResult.second)) {
                     Context ctx(request,response,
-                      globalMiddlewares.begin(),
-                      globalMiddlewares.end(),
-                      res_it->second[request->getMethod()].begin(),
-                      res_it->second[request->getMethod()].end());
+                      globalMiddlewares,
+                      res_it->second[request->getMethod()]);
 
                 if (res_it->second.count(request->getMethod()) > 0) {
                     request->setPathParam(tempPathParamStoreMap);

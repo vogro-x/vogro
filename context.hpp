@@ -24,46 +24,54 @@ namespace vogro {
 class Context {
 
 private:
-    std::vector<std::function<void(vogro::Context&)>>::const_iterator g;
-    std::vector<std::function<void(vogro::Context&)>>::const_iterator ge;
-    std::vector<std::function<void(vogro::Context&)>>::iterator l;
-    std::vector<std::function<void(vogro::Context&)>>::iterator le;
+    const std::vector<std::function<void(vogro::Context&)>>& g;
+    const std::vector<std::function<void(vogro::Context&)>>& l;
 
-    std::vector<std::function<void(vogro::Context&)>>::const_iterator currentHandler = g;
+    std::vector<std::function<void(vogro::Context&)>>::const_iterator currentHandler = g.begin();
+
+    std::map<std::string, std::string> values;
 
 public:
     std::shared_ptr<Request> request;
     std::shared_ptr<Response> response;
 
     Context(std::shared_ptr<Request> req, std::shared_ptr<Response> res,
-        std::vector<std::function<void(vogro::Context&)>>::const_iterator&& globalfirst,
-        std::vector<std::function<void(vogro::Context&)>>::const_iterator&& globalend,
-        std::vector<std::function<void(vogro::Context&)>>::iterator&& localfirst,
-        std::vector<std::function<void(vogro::Context&)>>::iterator&& localend)
+        const std::vector<std::function<void(vogro::Context&)>>& global,
+        const std::vector<std::function<void(vogro::Context&)>>& local)
         : request(req)
         , response(res)
-        , g(globalfirst)
-        , ge(globalend)
-        , l(localfirst)
-        , le(localend)
+        , g(global)
+        , l(local)
     {
     }
 
     void Next()
     {
         currentHandler++;
-        if (currentHandler != ge) {
+        if (currentHandler != g.end()) {
             (*currentHandler)(*this);
             return;
         } else {
-            currentHandler = l;
-            if (currentHandler != le) {
+            currentHandler = l.begin();
+            if (currentHandler != l.end()) {
                 (*currentHandler)(*this);
                 return;
             } else {
                 throw "No Next";
             }
         }
+    }
+
+
+    std::string getValue(const std::string key)
+    {
+        auto got = this->values.find(key);
+        return (got == this->values.end()) ? "" : got->second;
+    }
+
+    void setValue(const std::string key, const std::string val)
+    {
+        this->values[key] = val;
     }
 };
 }
