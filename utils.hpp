@@ -15,14 +15,15 @@
 
 #ifndef __VOGRO_UTILS_HPP__
 #define __VOGRO_UTILS_HPP__
-#include <unistd.h>
 #include <algorithm>
 #include <map>
-#include <string>
-#include <vector>
 #include <sstream>
+#include <string>
+#include <unistd.h>
+#include <vector>
 
-std::string ltrim(std::string str) {
+std::string ltrim(std::string str)
+{
     auto length = str.length();
     while (str.length()) {
         if (str[0] == ' ')
@@ -33,7 +34,8 @@ std::string ltrim(std::string str) {
     return str;
 }
 
-std::string rtrim(std::string str) {
+std::string rtrim(std::string str)
+{
     auto length = str.length();
     for (auto i = length - 1; i >= 0; i--) {
         if (str[i] == ' ')
@@ -47,11 +49,15 @@ std::string rtrim(std::string str) {
 std::string trim(std::string str) { return rtrim(ltrim(str)); }
 
 std::pair<bool, bool> urlMatch(std::string requestUrl, std::string handlerUrl,
-                               std::map<std::string, std::string> &storeMap) {
-    if (requestUrl.find("/static") == 0) return std::make_pair(false, true);
+    std::map<std::string, std::string>& storeMap)
+{
+    if (requestUrl.find("/static") == 0)
+        return std::make_pair(false, true);
 
-    if (handlerUrl.back() != '/') handlerUrl += '/';
-    if (requestUrl.back() != '/') requestUrl += '/';
+    if (handlerUrl.back() != '/')
+        handlerUrl += '/';
+    if (requestUrl.back() != '/')
+        requestUrl += '/';
 
     std::string type, name, dynamicParam;
 
@@ -62,7 +68,7 @@ std::pair<bool, bool> urlMatch(std::string requestUrl, std::string handlerUrl,
     for (auto i = 0, j = 0; (i < max_length) && (j < max_length); ++i, ++j) {
         if (handlerUrl[i] == '{') {
             auto tempIndex = i + 1;
-            bool flag = true;  // true代表当前在type域中
+            bool flag = true; // true代表当前在type域中
             do {
                 if (handlerUrl[tempIndex] == ':') {
                     flag = false;
@@ -79,13 +85,13 @@ std::pair<bool, bool> urlMatch(std::string requestUrl, std::string handlerUrl,
 
             i = tempIndex + 1;
 
-            if (flag == true) type = "int";
+            if (flag == true)
+                type = "int";
 
             do {
                 // if type is int, every char in dynamicParam should be in
                 // [48,57]
-                if ((type == "int") &&
-                    (requestUrl[j] < 48 || requestUrl[j] > 57)) {
+                if ((type == "int") && (requestUrl[j] < 48 || requestUrl[j] > 57)) {
                     return std::make_pair(false, false);
                 }
                 dynamicParam += requestUrl[j];
@@ -101,19 +107,20 @@ std::pair<bool, bool> urlMatch(std::string requestUrl, std::string handlerUrl,
             dynamicParam.clear();
         }
 
-        if ((i >= handlerUrlLength) || (j >= requestUrlLength) ||
-            (handlerUrl[i] != requestUrl[j])) {
+        if ((i >= handlerUrlLength) || (j >= requestUrlLength) || (handlerUrl[i] != requestUrl[j])) {
             return std::make_pair(false, false);
         }
     }
     return std::make_pair(true, false);
 }
 
-std::map<std::string, std::string> split_query_string(std::string str) {
+std::map<std::string, std::string> split_query_string(std::string str)
+{
     std::map<std::string, std::string> results;
     std::string key, val;
     auto flag = true;
-    if (str.length() == 0) return results;
+    if (str.length() == 0)
+        return results;
 
     for (auto i = 0; i <= str.length(); i++) {
         if (i == str.length() || str[i] == '&') {
@@ -135,10 +142,11 @@ std::map<std::string, std::string> split_query_string(std::string str) {
     return results;
 }
 
-std::pair<std::string, std::string> parse_header(std::string &header) {
+std::pair<std::string, std::string> parse_header(std::string& header)
+{
     std::string header_key, header_val;
 
-    header_val.reserve(50);  // pre alloc space
+    header_val.reserve(50); // pre alloc space
 
     auto pos = header.find(":");
     header_key = trim(header.substr(0, pos));
@@ -148,10 +156,11 @@ std::pair<std::string, std::string> parse_header(std::string &header) {
 }
 
 std::pair<std::string, std::pair<std::string, std::string>> parse_request_line(
-    std::string request_line) {
+    std::string request_line)
+{
     std::string method, url, version;
 
-    url.reserve(50);  // pre alloc 50 byte
+    url.reserve(50); // pre alloc 50 byte
 
     char flag = 'm';
     bool versionNumberStart = false;
@@ -175,7 +184,8 @@ std::pair<std::string, std::pair<std::string, std::string>> parse_request_line(
                 versionNumberStart = true;
                 ++i;
             }
-            if (versionNumberStart) version += request_line[i];
+            if (versionNumberStart)
+                version += request_line[i];
         }
     }
 
@@ -184,26 +194,30 @@ std::pair<std::string, std::pair<std::string, std::string>> parse_request_line(
     return std::make_pair(method, url_version_pair);
 }
 
-std::string getFileExtension(std::string path) {
+std::string getFileExtension(std::string path)
+{
     auto pos = path.find_last_of('.');
     std::string ext = path.substr(pos + 1);
     std::transform(ext.begin(), ext.end(), ext.begin(), [](char in) -> char {
-        if (in <= 'Z' && in >= 'A') return in - ('Z' - 'z');
+        if (in <= 'Z' && in >= 'A')
+            return in - ('Z' - 'z');
         return in;
     });
     return ext;
 }
 
-int is_file_exist(const char *path) {
-    if (path == NULL) return -1;
+int is_file_exist(const char* path)
+{
+    if (path == NULL)
+        return -1;
     if (access(path, F_OK) == 0) {
         return 0;
     }
     return -1;
 }
 
-
-std::vector<std::string> split(const std::string &s, char delimiter) {
+std::vector<std::string> split(const std::string& s, char delimiter)
+{
     std::vector<std::string> tokens;
     std::string token;
     std::istringstream tokenStream(s);
@@ -212,6 +226,5 @@ std::vector<std::string> split(const std::string &s, char delimiter) {
     }
     return tokens;
 }
-
 
 #endif

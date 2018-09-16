@@ -23,6 +23,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "utils.hpp"
+
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -64,38 +66,6 @@ class Request {
     // the parameters in path
     std::map<std::string, std::string> pathParam;
 
-    // splitQueryString devide query string such as "id=123&name=andrew" into
-    // key value pair and store them into storeMap
-    void splitQueryString(std::string queryString,
-                          std::map<std::string, std::string> &storeMap) {
-        std::string key = "";
-        std::string val = "";
-        auto flag = true;
-        for (auto i = 0; i <= queryString.length(); i++) {
-            if (i == queryString.length() || queryString[i] == '&') {
-                flag = true;
-
-                storeMap[key] = val;
-
-                key.clear();
-                val.clear();
-
-                continue;
-
-            } else if (queryString[i] == '=') {
-                flag = false;
-
-                continue;
-            }
-
-            if (flag) {
-                key += queryString[i];
-            } else {
-                val += queryString[i];
-            }
-        }
-    }
-
    public:
     std::string getMethod() { return this->method; }
 
@@ -130,50 +100,36 @@ class Request {
         return (got == this->headers.end()) ? "" : got->second;
     }
 
-    std::unordered_map<std::string, std::string> getHeaders() {
-        return this->headers;
-    }
+    std::unordered_map<std::string, std::string> getHeaders() {return this->headers; }
 
-    void addHeader(std::string key, std::string val) {
-        this->headers[key] = val;
-    }
+    void addHeader(std::string key, std::string val) {this->headers[key] = val;}
 
-    // void addPathParam(std::string key, std::string val) {
-    //   this->pathParam[key] = val;
-    // }
-
-    void setPathParam(std::map<std::string, std::string> &pathParam) {
-        this->pathParam = pathParam;
-    }
+    void setPathParam(std::map<std::string, std::string> &pathParam) {this->pathParam = pathParam; }
 
     std::string getPathParam(std::string key) {
         auto got = this->pathParam.find(key);
         return (got == this->pathParam.end()) ? "" : got->second;
     }
 
-    void setQueryParam(std::string queryString) {
-        this->splitQueryString(queryString, this->queryParam);
-    }
+    void setQueryParam(std::string queryString) {this->queryParam = split_query_string(queryString);}
 
     std::string getQueryParam(std::string key) {
         auto got = this->queryParam.find(key);
         return (got == this->queryParam.end()) ? "" : got->second;
     }
 
-    void setFormParam(std::string formData) {
-        this->splitQueryString(formData, this->formParam);
-    }
+    void setFormParam(std::string formData) {this->formParam = split_query_string(formData);}
 
     std::string getFormParam(std::string key) {
         auto got = this->formParam.find(key);
         return (got == this->formParam.end()) ? "" : got->second;
     }
 
-    void ReadJSON(std::shared_ptr<std::istream> jsonPtr) {
-        pt::read_json(*jsonPtr, jsonTree);
-    }
+    void ReadJSON(std::shared_ptr<std::istream> jsonPtr) {pt::read_json(*jsonPtr, jsonTree); }
 
     const pt::ptree &GetJsonTree() { return this->jsonTree; }
+
+    
 };
 
 }  // namespace vogro
