@@ -1,28 +1,31 @@
 #include "http_server.hpp"
 
-int main() {
+int main()
+{
     vogro::Server server(12345, 4);
 
-    server.addRoute("/", "GET",
-                    [](vogro::Response &response, vogro::Request &request) {
-                        response.addBody("<h1>Index Page</h1>");
-                        return;
-                    });
+    server.use([](vogro::Context& ctx) {
+        std::cout<<"coming................"<<std::endl;
+        ctx.Next();
+    });
 
-    server.addRoute("/username/{str:name}/", "GET",
-              [](vogro::Response &response, vogro::Request &request) {
-                    auto name = request.getPathParam("name");
-                    response.addBody(name);
-                    return;
-      });
+    server.addRoute("/", "GET", [](vogro::Context& ctx) {
+        ctx.response->addBody("<h1>Index Page</h1>");
+        return;
+    });
 
-    server.addRoute("/course/{str:coursename}/user/{int:id}/", "GET",
-        [](vogro::Response &response, vogro::Request &request) {
-            auto coursename = request.getPathParam("coursename");
-            auto id = request.getPathParam("id");
-            response.addBody("coursename:" + coursename + ",id: " + id);
-            return;
-        });
+    server.addRoute("/username/{str:name}/", "GET", [](vogro::Context& ctx) {
+        auto name = ctx.request->getPathParam("name");
+        ctx.response->addBody(name);
+        return;
+    });
+
+    server.addRoute("/course/{str:coursename}/user/{int:id}/", "GET", [](vogro::Context& ctx) {
+        auto coursename = ctx.request->getPathParam("coursename");
+        auto id = ctx.request->getPathParam("id");
+        ctx.response->addBody("coursename:" + coursename + ",id: " + id);
+        return;
+    });
 
     /**************************************************
     此处请求的时候一定要有Content-Length头部，后面这里需要改进
@@ -37,19 +40,17 @@ int main() {
 
     {"name":"andrewpqc"}
     ****************************************************/
-    server.addRoute("/a/post/", "POST",
-                    [](vogro::Response &response, vogro::Request &request) {
-                        auto json = request.GetJsonTree();
-                        auto name = json.get<std::string>("name");
-                        response.addBody(name);
-                        return;
-                    });
+    server.addRoute("/a/post/", "POST", [](vogro::Context& ctx) {
+        auto json = ctx.request->GetJsonTree();
+        auto name = json.get<std::string>("name");
+        ctx.response->addBody(name);
+        return;
+    });
 
-    server.customErrorHandler(
-        404, [](vogro::Response &response, vogro::Request &request) {
-            response.addBody("<h1>Custom Not Found</h1>");
-            return;
-        });
+    server.customErrorHandler(404, [](vogro::Context& ctx) {
+        ctx.response->addBody("<h1>Custom Not Found</h1>");
+        return;
+    });
 
     server.runServer();
     return 0;

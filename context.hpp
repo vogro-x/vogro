@@ -16,42 +16,56 @@
 #ifndef __CONTEXT_HPP__
 #define __CONTEXT_HPP__
 
-#include "response.hpp"
 #include "request.hpp"
+#include "response.hpp"
 
 namespace vogro {
 
-class Context{
-    private:
-    Request req;
-    Response res;
-    // globalHandlerIterator g
-    // LocalHandlerIterator  l
+class Context {
 
-    public:
-    
-    void Next(){
-        if g->next != g.end():
-            g.next()
-        else if(l->next!= l.end():
-            l.next()
-        else:
-            not found next.
+private:
+    std::vector<std::function<void(vogro::Context&)>>::const_iterator g;
+    std::vector<std::function<void(vogro::Context&)>>::const_iterator ge;
+    std::vector<std::function<void(vogro::Context&)>>::iterator l;
+    std::vector<std::function<void(vogro::Context&)>>::iterator le;
+
+    std::vector<std::function<void(vogro::Context&)>>::const_iterator currentHandler = g;
+
+public:
+    std::shared_ptr<Request> request;
+    std::shared_ptr<Response> response;
+
+    Context(std::shared_ptr<Request> req, std::shared_ptr<Response> res,
+        std::vector<std::function<void(vogro::Context&)>>::const_iterator&& globalfirst,
+        std::vector<std::function<void(vogro::Context&)>>::const_iterator&& globalend,
+        std::vector<std::function<void(vogro::Context&)>>::iterator&& localfirst,
+        std::vector<std::function<void(vogro::Context&)>>::iterator&& localend)
+        : request(req)
+        , response(res)
+        , g(globalfirst)
+        , ge(globalend)
+        , l(localfirst)
+        , le(localend)
+    {
     }
-    
-   
-    Context(){};
-    void Next(){
 
+    void Next()
+    {
+        currentHandler++;
+        if (currentHandler != ge) {
+            (*currentHandler)(*this);
+            return;
+        } else {
+            currentHandler = l;
+            if (currentHandler != le) {
+                (*currentHandler)(*this);
+                return;
+            } else {
+                throw "No Next";
+            }
+        }
     }
-
 };
-
-
 }
-
-
-
-
 
 #endif
