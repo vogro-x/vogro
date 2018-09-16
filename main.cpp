@@ -1,4 +1,4 @@
-#include "http_server.hpp"
+#include "http.hpp"
 
 int main()
 {
@@ -6,6 +6,7 @@ int main()
 
     server.use([](vogro::Context& ctx) {
         std::cout<<"coming................"<<std::endl;
+        ctx.setValue("key","hhhhhh");
         ctx.Next();
     });
 
@@ -16,7 +17,9 @@ int main()
 
     server.addRoute("/username/{str:name}/", "GET", [](vogro::Context& ctx) {
         auto name = ctx.request->getPathParam("name");
+       auto key= ctx.getValue("key");
         ctx.response->addBody(name);
+        ctx.response->addBody(key);
         return;
     });
 

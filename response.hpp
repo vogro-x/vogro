@@ -22,7 +22,7 @@
 #include <unordered_map>
 
 #include "common.hpp"
-#include "status_code.hpp"
+#include "status.hpp"
 
 namespace vogro {
 class Response {

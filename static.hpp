@@ -21,11 +21,11 @@
 
 #ifndef __STATIC_SERVER_HPP__
 #define __STATIC_SERVER_HPP__
-#include "mime_type.hpp"
+#include "mime.hpp"
 #include "request.hpp"
 #include "response.hpp"
-#include "status_code.hpp"
-#include "vogro_utils.hpp"
+#include "status.hpp"
+#include "utils.hpp"
 
 #include <boost/asio.hpp>
 #include <cstdlib>
@@ -37,10 +37,9 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <vector>
-// https://github.com/golang/go/blob/42257a262c94d839364113f2dbf4057731971fc1/src/net/http/fs.go#L713
+
 // https://www.rfc-editor.org/rfc/rfc7233.txt
 
-// Ranges : bytes = xxx -xxx
 
 enum Cond {
     CondNone = 1,

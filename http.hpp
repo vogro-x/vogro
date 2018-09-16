@@ -17,9 +17,9 @@
 #define _HTTP_SERVER_HPP
 
 #include <iostream>
-#include "base_server.hpp"
+#include "base.hpp"
 #include "common.hpp"
-#include "status_code.hpp"
+#include "status.hpp"
 
 namespace vogro {
 

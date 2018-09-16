@@ -27,9 +27,9 @@
 #include "context.hpp"
 #include "request.hpp"
 #include "response.hpp"
-#include "static_server.hpp"
-#include "vogro_logger.hpp"
-#include "vogro_utils.hpp"
+#include "static.hpp"
+#include "logger.hpp"
+#include "utils.hpp"
 
 namespace vogro {
 
