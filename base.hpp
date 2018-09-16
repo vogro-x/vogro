@@ -30,11 +30,44 @@
 #include "response.hpp"
 #include "static.hpp"
 #include "utils.hpp"
-#include "group.hpp"
 
 namespace vogro {
 
 typedef std::map<std::string, std::unordered_map<std::string, std::vector<std::function<void(vogro::Context&)>>>> RegistrationCenter;
+
+class Group {
+private:
+    std::string prefix_;
+    RegistrationCenter& rc_;
+
+public:
+    Group(std::string prefix, RegistrationCenter& rc)
+        : prefix_(prefix)
+        , rc_(rc)
+    {
+    }
+
+    void GET(std::string userPath, std::function<void(vogro::Context&)> handler)
+    {
+        this->rc_[prefix_ + userPath]["GET"].push_back(handler);
+    }
+
+    void POST(std::string userPath, std::function<void(vogro::Context&)> handler)
+    {
+        this->rc_[prefix_ + userPath]["POST"].push_back(handler);
+    }
+
+    void PUT(std::string userPath, std::function<void(vogro::Context&)> handler)
+    {
+        this->rc_[prefix_ + userPath]["PUT"].push_back(handler);
+    }
+
+    void DELETE(std::string userPath, std::function<void(vogro::Context&)> handler)
+    {
+        this->rc_[prefix_ + userPath]["DELETE"].push_back(handler);
+    }
+};
+
 
 template <typename socket_type>
 class ServerBase {
@@ -261,6 +294,7 @@ public:
 
     std::shared_ptr<vogro::Group> makeGroup(std::string prefix,std::function<void(vogro::Context&)> handler) {
         auto group = std::shared_ptr<vogro::Group>(new vogro::Group(prefix,user_resource));
+        
         return group;
     }
 

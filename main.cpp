@@ -1,4 +1,3 @@
-#include "group.hpp"
 #include "http.hpp"
 
 int main()
