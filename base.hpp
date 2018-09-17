@@ -30,6 +30,7 @@
 #include "response.hpp"
 #include "static.hpp"
 #include "utils.hpp"
+#include "default_error_handler.hpp"
 
 namespace vogro {
 
@@ -67,7 +68,7 @@ public:
     }
 
     template <typename... Args>
-    void GET(std::string userPath, const Args&... args)
+    void Get(std::string userPath, const Args&... args)
     {
         if (prefix_.back() == '/')
             prefix_.pop_back();
@@ -78,7 +79,7 @@ public:
     }
 
     template <typename... Args>
-    void POST(std::string userPath, const Args&... args)
+    void Post(std::string userPath, const Args&... args)
     {
         if (prefix_.back() == '/')
             prefix_.pop_back();
@@ -88,7 +89,7 @@ public:
     }
 
     template <typename... Args>
-    void PUT(std::string userPath, const Args&... args)
+    void Put(std::string userPath, const Args&... args)
     {
         if (prefix_.back() == '/')
             prefix_.pop_back();
@@ -98,7 +99,7 @@ public:
     }
 
     template <typename... Args>
-    void DELETE(std::string userPath, const Args&... args)
+    void Delete(std::string userPath, const Args&... args)
     {
         if (prefix_.back() == '/')
             prefix_.pop_back();
@@ -124,7 +125,7 @@ protected:
     RegistrationCenter user_resource;
     RegistrationCenter vogro_resource;
 
-    std::function<void(vogro::Request&, vogro::Response&)> default_error_handler;
+    std::function<void(vogro::Request&, vogro::Response&)> default_error_handler = DefaultErrorHandler;
     std::unordered_map<unsigned short,
         std::function<void(vogro::Request&, vogro::Response&)>> error_handlers;
 
@@ -347,19 +348,19 @@ public:
     }
 
     template <typename... Args>
-    void POST(const std::string userPath, const Args&... args)
+    void Post(const std::string userPath, const Args&... args)
     {
         this->addHandler(userPath, "POST", args...);
     }
 
     template <typename... Args>
-    void PUT(const std::string userPath, const Args&... args)
+    void Put(const std::string userPath, const Args&... args)
     {
         this->addHandler(userPath, "PUT", args...);
     }
 
     template <typename... Args>
-    void DELETE(const std::string userPath, const Args&... args)
+    void Delete(const std::string userPath, const Args&... args)
     {
         this->addHandler(userPath, "PUT", args...);
     }
@@ -372,7 +373,7 @@ public:
             new vogro::Group(prefix, user_resource, handler));
     }
 
-    void customErrorHandler(
+    void onError(
         unsigned short code,
         std::function<void(vogro::Request&, vogro::Response&)> handler)
     {

@@ -50,10 +50,10 @@ int main()
         return;
     });
 
-    server.customErrorHandler(404, [](vogro::Request& request, vogro::Response& response) {
-        response.addBody("<h1>Custom Not Found</h1>");
-        return;
-    });
+    // server.onError(404, [](vogro::Request& request, vogro::Response& response) {
+    //     response.addBody("<h1>Custom Not Found</h1>");
+    //     return;
+    // });
 
 
 
@@ -63,17 +63,17 @@ int main()
         ctx.Next(); 
     });
     {
-        userGroup->GET("/get", TestHandler1, TestHandler2, TestHandler3);
+        userGroup->Get("/get", TestHandler1, TestHandler2, TestHandler3);
 
-        userGroup->POST("/post", [](vogro::Context& ctx) {
+        userGroup->Post("/post", [](vogro::Context& ctx) {
             ctx.response->addBody("post");
         });
 
-        userGroup->PUT("/put", [](vogro::Context& ctx) {
+        userGroup->Put("/put", [](vogro::Context& ctx) {
             ctx.response->addBody("put");
         });
 
-        userGroup->DELETE("/delete", [](vogro::Context& ctx) {
+        userGroup->Delete("/delete", [](vogro::Context& ctx) {
             ctx.response->addBody("delete");
         });
     }
@@ -81,6 +81,7 @@ int main()
 
     server.Get("/ggg",TestHandler1,TestHandler2,TestHandler3);
 
+    
     server.runServer();
     return 0;
 }
