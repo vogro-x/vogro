@@ -55,7 +55,13 @@ int main()
         return;
     });
 
-    auto userGroup = server.makeGroup("/user", [](vogro::Context& ctx) { ctx.Next(); });
+
+
+
+    auto userGroup = server.makeGroup("/user", [](vogro::Context& ctx) {
+        ctx.response->addBody("hello from group global handler<br>");
+        ctx.Next(); 
+    });
     {
         userGroup->GET("/get", TestHandler1, TestHandler2, TestHandler3);
 

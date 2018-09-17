@@ -39,58 +39,71 @@ class Group {
 private:
     std::string prefix_;
     RegistrationCenter& rc_;
+    const std::function<void(vogro::Context&)> groupGlobalHandler_;
 
     Logger<TerminalPolicy>& logger = Logger<TerminalPolicy>::getLoggerInstance("vogro.log");
 
-    void addHandler(std::string path, std::string method) {
-        logger.LOG_INFO(path,method,"handlers register ok");
+    void addHandler(std::string path, std::string method)
+    {
+        logger.LOG_INFO(path, method, "handlers register ok");
     }
 
     template <typename First, typename... Rest>
-    void addHandler(std::string path, std::string method, const First &parm1, const Rest &... parm){
+    void addHandler(std::string path, std::string method, const First& parm1, const Rest&... parm)
+    {
         this->rc_[path][method].push_back(parm1);
-        addHandler(path,method,parm...);
+        addHandler(path, method, parm...);
     }
 
 public:
-    Group(std::string prefix, RegistrationCenter& rc)
+    Group(std::string prefix, RegistrationCenter& rc,const std::function<void(vogro::Context&)> groupGlobalHandler)
         : prefix_(prefix)
-        , rc_(rc){}
-
-    template <typename... Args>
-    void GET(std::string userPath, const Args &... args)
+        , rc_(rc)
+        , groupGlobalHandler_(groupGlobalHandler)
     {
-        if(prefix_.back() == '/') prefix_.pop_back();
-        auto path = prefix_+ userPath;
-        this->addHandler(path,"GET", args...);
     }
 
     template <typename... Args>
-    void POST(std::string userPath, const Args &... args)
-    {   
-        if(prefix_.back() == '/') prefix_.pop_back();
-        auto path = prefix_+userPath;
-         this->addHandler(path,"POST", args...);
+    void GET(std::string userPath, const Args&... args)
+    {
+        if (prefix_.back() == '/')
+            prefix_.pop_back();
+        auto path = prefix_ + userPath;
+
+        this->rc_[path]["GET"].push_back(groupGlobalHandler_);
+        this->addHandler(path, "GET", args...);
     }
 
     template <typename... Args>
-    void PUT(std::string userPath, const Args &... args)
-    {   
-        if(prefix_.back() == '/') prefix_.pop_back();
-        auto path = prefix_+userPath;
-         this->addHandler(path,"PUT", args...);
+    void POST(std::string userPath, const Args&... args)
+    {
+        if (prefix_.back() == '/')
+            prefix_.pop_back();
+        auto path = prefix_ + userPath;
+         this->rc_[path]["POST"].push_back(groupGlobalHandler_);
+        this->addHandler(path, "POST", args...);
     }
 
     template <typename... Args>
-    void DELETE(std::string userPath, const Args &... args)
-    {   
-        if(prefix_.back() == '/') prefix_.pop_back();
-        auto path = prefix_+userPath;
-         this->addHandler(path,"DELETE", args...);
+    void PUT(std::string userPath, const Args&... args)
+    {
+        if (prefix_.back() == '/')
+            prefix_.pop_back();
+        auto path = prefix_ + userPath;
+         this->rc_[path]["PUT"].push_back(groupGlobalHandler_);
+        this->addHandler(path, "PUT", args...);
     }
 
+    template <typename... Args>
+    void DELETE(std::string userPath, const Args&... args)
+    {
+        if (prefix_.back() == '/')
+            prefix_.pop_back();
+        auto path = prefix_ + userPath;
+         this->rc_[path]["DELETE"].push_back(groupGlobalHandler_);
+        this->addHandler(path, "DELETE", args...);
+    }
 };
-
 
 template <typename socket_type>
 class ServerBase {
@@ -250,7 +263,7 @@ public:
                         res_it->second[request->getMethod()]);
 
                     if (globalMiddlewares.begin() != globalMiddlewares.end()) {
-                        (*(globalMiddlewares.begin()))(ctx); 
+                        (*(globalMiddlewares.begin()))(ctx);
                     } else {
                         if (res_it->second[request->getMethod()].begin() != res_it->second[request->getMethod()].end()) {
                             (*(res_it->second[request->getMethod()].begin()))(ctx);
@@ -286,7 +299,6 @@ public:
             *socket, *write_buffer,
             [this, socket, request, write_buffer, &response](
                 const boost::system::error_code& ec, size_t bytes_transferred) {
-
                 logger.LOG_DEBUG(request->getRemoteIP(), request->getMethod(), request->getPath(), response->getCode());
 
                 if (!ec && std::stof(request->getVersion()) > 1.05)
@@ -295,40 +307,46 @@ public:
         return;
     }
 
-    void addRoute(std::string userPath, std::string method, std::function<void(vogro::Context&)> handler){
+    void addRoute(std::string userPath, std::string method, std::function<void(vogro::Context&)> handler)
+    {
         this->user_resource[userPath][method].push_back(handler);
     }
 
-    void Get(std::string userPath, std::function<void(vogro::Context&)> handler) {
+    void Get(std::string userPath, std::function<void(vogro::Context&)> handler)
+    {
         this->user_resource[userPath]["GET"].push_back(handler);
     }
 
-    void POST(std::string userPath, std::function<void(vogro::Context&)> handler) {
+    void POST(std::string userPath, std::function<void(vogro::Context&)> handler)
+    {
         this->user_resource[userPath]["POST"].push_back(handler);
     }
 
-    void PUT(std::string userPath, std::function<void(vogro::Context&)> handler) {
+    void PUT(std::string userPath, std::function<void(vogro::Context&)> handler)
+    {
         this->user_resource[userPath]["PUT"].push_back(handler);
     }
 
-    void DELETE(std::string userPath, std::function<void(vogro::Context&)> handler) {
+    void DELETE(std::string userPath, std::function<void(vogro::Context&)> handler)
+    {
         this->user_resource[userPath]["DELETE"].push_back(handler);
     }
 
-    std::shared_ptr<vogro::Group> makeGroup(std::string prefix,std::function<void(vogro::Context&)> handler) {
-        auto group = std::shared_ptr<vogro::Group>(new vogro::Group(prefix,user_resource));
+    std::shared_ptr<vogro::Group> makeGroup(std::string prefix, const std::function<void(vogro::Context&)>& handler)
+    {
+        auto group = std::shared_ptr<vogro::Group>(new vogro::Group(prefix, user_resource,handler));
         return group;
     }
 
-    void customErrorHandler(unsigned short code, std::function<void(vogro::Request&, vogro::Response&)> handler) {
+    void customErrorHandler(unsigned short code, std::function<void(vogro::Request&, vogro::Response&)> handler)
+    {
         this->error_handlers[code] = handler;
     }
 
-    void Use(std::function<void(vogro::Context&)> middleware) {
+    void Use(std::function<void(vogro::Context&)> middleware)
+    {
         this->globalMiddlewares.push_back(middleware);
     }
-
-
 };
 
 } // namespace vogro
