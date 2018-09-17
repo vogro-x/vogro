@@ -23,6 +23,8 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <typeinfo>
+#include <boost/asio/ssl.hpp>
 
 #include "context.hpp"
 #include "logger.hpp"
@@ -196,10 +198,12 @@ protected:
 
                     auto request = std::make_shared<vogro::Request>();
                     *request = parse_request(stream);
-
-                    request->setRemoteIP(socket->remote_endpoint().address().to_string());
-                    request->setRemotePort(socket->remote_endpoint().port());
-
+                    
+                  
+                    request->setRemoteIP(socket->lowest_layer().remote_endpoint().address().to_string());
+                    request->setRemotePort(socket->lowest_layer().remote_endpoint().port());
+    
+                    
                     size_t num_additional_bytes = total - bytes_transferred;
                     if (request->getHeader("Content-Length") != "") {
                         boost::asio::async_read(

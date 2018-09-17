@@ -21,6 +21,7 @@
 #include "common.hpp"
 #include "status.hpp"
 
+
 namespace vogro {
 
 typedef boost::asio::ip::tcp::socket HTTP;

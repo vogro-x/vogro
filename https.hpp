@@ -25,6 +25,7 @@ namespace vogro {
 
     typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> HTTPS;
 
+    
 
     class Server: public ServerBase<HTTPS> {
     public:
