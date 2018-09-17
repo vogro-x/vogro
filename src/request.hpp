@@ -129,6 +129,22 @@ class Request {
 
     const pt::ptree &GetJsonTree() { return this->jsonTree; }
 
+    std::string getCookie(std::string key=""){
+        auto cookieString = this->getHeader("Cookie");
+        if(key=="" || cookieString == "")
+            return cookieString;
+
+         auto tokens =split(cookieString,',');
+         for(auto tk: tokens){
+             auto kv = split(tk,'=');
+             if (kv.size()==2 &&trim(kv[0])==key)
+                return kv[1];
+         }
+
+         return "";
+    }
+
+    
     
 };
 

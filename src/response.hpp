@@ -113,24 +113,27 @@ public:
      **************************************************************************/
 
 
-    void setCookie(std::string k, std::string v, std::string path = "/", std::string domain = "", bool httpOnly = true,
-        std::string expires = "", std::string maxAge = "")
+    void setCookie(std::string k, std::string v, std::string path = "/",  bool httpOnly = true,
+        std::string maxAge = "", std::string domain = "", std::string expires = "")
     {
         std::stringstream ss;
         ss << k << "=" << v;
 
-        if(path != "/"){   
-            ss <<"; "<< "Path=" <<path;  // if path not set, the default path is "/"
-        }
-
-        if(domain !=""){
-            ss <<"; "<< "Domain=" << domain; 
-        }
-
-        if(httpOnly){
-            ss <<"; "<<"HttpOnly";
-        }
-
+        if(path != "/")
+            ss <<"; Path=" <<path;  // if path not set, the default path is "/"
+        
+        if(httpOnly)
+            ss <<"; HttpOnly";
+        
+        if(maxAge!="")
+            ss << "; Max-Age="<<maxAge;
+        
+        if(domain !="")
+            ss <<"; Domain=" << domain; 
+        
+        if(expires!="")
+            ss<<"; Expires=" <<expires;
+        
         this->addHeader("Set-Cookie",ss.str());
     }
 
