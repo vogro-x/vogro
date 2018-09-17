@@ -114,20 +114,19 @@ protected:
     boost::asio::io_service io_svc;
     boost::asio::ip::tcp::endpoint endpoint;
     boost::asio::ip::tcp::acceptor acceptor;
+    
+    unsigned short port_;
 
     size_t thread_num;
     std::vector<std::thread> threads;
-
     std::vector<RegistrationCenter::iterator> all_resources;
 
     RegistrationCenter user_resource;
     RegistrationCenter vogro_resource;
 
-    std::function<void(vogro::Request&, vogro::Response&)>
-        default_error_handler;
+    std::function<void(vogro::Request&, vogro::Response&)> default_error_handler;
     std::unordered_map<unsigned short,
-        std::function<void(vogro::Request&, vogro::Response&)>>
-        error_handlers;
+        std::function<void(vogro::Request&, vogro::Response&)>> error_handlers;
 
     std::vector<std::function<void(vogro::Context&)>> globalMiddlewares;
 
@@ -154,6 +153,7 @@ public:
         : endpoint(boost::asio::ip::tcp::v4(), port)
         , acceptor(io_svc, endpoint)
         , thread_num(num_threads)
+        , port_(port)
     {
     }
 
@@ -165,7 +165,7 @@ public:
         for (auto it = vogro_resource.begin(); it != vogro_resource.end(); it++)
             all_resources.push_back(it);
 
-        logger.LOG_INFO("vogro server is linstening on port:", 12345);
+        logger.LOG_INFO("Vogro Server Listened on:", this->port_);
 
         accept();
 
@@ -299,7 +299,7 @@ private:
                     matchedOne = true;
                     break;
                 } else {
-                    response->setCode(CodeMethodNotAllowed_405);
+                    response->setCode(CodeMethodNotAllowed_405,"Method Not Allowed");
                     auto got = error_handlers.find(CodeMethodNotAllowed_405);
                     if (got == error_handlers.end())
                         default_error_handler(*request, *response);
@@ -312,7 +312,7 @@ private:
         }
 
         if (!matchedOne) {
-            response->setCode(CodeNotFound_404);
+            response->setCode(CodeNotFound_404,"Not Found");
             auto got = error_handlers.find(CodeNotFound_404);
             if (got == error_handlers.end())
                 default_error_handler(*request, *response);
