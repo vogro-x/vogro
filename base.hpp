@@ -128,6 +128,19 @@ protected:
     Logger<TerminalPolicy>& logger = Logger<TerminalPolicy>::getLoggerInstance("vogro.log");
 
     virtual void accept() {}
+private:
+
+    void addHandler(std::string path, std::string method)
+    {
+        logger.LOG_INFO(path, method, "handlers register ok");
+    }
+
+    template <typename First, typename... Rest>
+    void addHandler(std::string path, std::string method, const First& parm1, const Rest&... parm)
+    {
+        this->user_resource[path][method].push_back(parm1);
+        addHandler(path, method, parm...);
+    }
 
 public:
     ServerBase(unsigned short port, size_t num_threads)
@@ -307,29 +320,33 @@ public:
         return;
     }
 
-    void addRoute(std::string userPath, std::string method, std::function<void(vogro::Context&)> handler)
+    void addRoute(const std::string userPath, const std::string method, const std::function<void(vogro::Context&)> handler)
     {
         this->user_resource[userPath][method].push_back(handler);
     }
 
-    void Get(std::string userPath, std::function<void(vogro::Context&)> handler)
+    template <typename ... Args>
+    void Get(const std::string userPath, const Args& ... args)
     {
-        this->user_resource[userPath]["GET"].push_back(handler);
+        this->addHandler(userPath,"GET",args...);
     }
 
-    void POST(std::string userPath, std::function<void(vogro::Context&)> handler)
+    template <typename ... Args>
+    void POST(const std::string userPath, const Args& ... args)
     {
-        this->user_resource[userPath]["POST"].push_back(handler);
+        this->addHandler(userPath,"POST",args...);
     }
 
-    void PUT(std::string userPath, std::function<void(vogro::Context&)> handler)
+    template <typename ... Args>
+    void PUT(const std::string userPath, const Args& ... args)
     {
-        this->user_resource[userPath]["PUT"].push_back(handler);
+        this->addHandler(userPath,"PUT",args...);
     }
 
-    void DELETE(std::string userPath, std::function<void(vogro::Context&)> handler)
+    template <typename ... Args>
+    void DELETE(const std::string userPath, const Args& ... args)
     {
-        this->user_resource[userPath]["DELETE"].push_back(handler);
+        this->addHandler(userPath,"PUT",args...);
     }
 
     std::shared_ptr<vogro::Group> makeGroup(std::string prefix, const std::function<void(vogro::Context&)>& handler)

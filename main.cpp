@@ -78,6 +78,9 @@ int main()
         });
     }
 
+
+    server.Get("/ggg",TestHandler1,TestHandler2,TestHandler3);
+
     server.runServer();
     return 0;
 }
