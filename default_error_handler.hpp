@@ -23,7 +23,7 @@ void DefaultErrorHandler(vogro::Request& request, vogro::Response& response) {
     auto pharse = codeMap.getPharseByCode(code);
     std::stringstream ss;
     ss << "<center><h1>" << code << " " << pharse << "</h1><br/>";
-    ss << "<a href='https://github.com/Andrewpqc/vogro'>vogro(" << 0.1
+    ss << "<a href='https://github.com/vogro-x/vogro'>vogro(" << 0.1
        << ")</a></center>";
     response.addBody(ss.str());
     return;
