@@ -12,6 +12,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  ************************************************************************/
+#ifndef __DEFAULT_ERROR_HANDLER_HPP__
+#define __DEFAULT_ERROR_HANDLER_HPP__
 
 #include "request.hpp"
 #include "response.hpp"
@@ -28,3 +30,5 @@ void DefaultErrorHandler(vogro::Request& request, vogro::Response& response) {
     response.addBody(ss.str());
     return;
 };
+
+#endif
