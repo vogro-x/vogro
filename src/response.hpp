@@ -24,6 +24,7 @@
 
 #include "common.hpp"
 #include "status.hpp"
+#include "json.hpp"
 
 namespace vogro {
 
@@ -141,6 +142,11 @@ public:
     void redirect(const std::string location,int code = 307){
         this->setCode(code);
         this->addHeader("Location",location);
+    }
+    
+    void writeJSON(const nlohmann::json& j){
+        this->addHeader("Content-Type","application/json");
+        this->addBody(j.dump());
     }
     
     void addBody(std::string cnt) { this->body << cnt; }

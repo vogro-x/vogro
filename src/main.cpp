@@ -1,5 +1,6 @@
 #include "handlers.hpp"
 #include "http.hpp"
+#include "json.hpp"
 // #include "https.hpp"
 int main()
 {
@@ -46,19 +47,16 @@ int main()
     {"name":"andrewpqc"}
     ****************************************************/
     server.addRoute("/a/post/", "POST", [](vogro::Context& ctx) {
-        auto json = ctx.request->GetJsonTree();
-        auto name = json.get<std::string>("name");
+        auto json = ctx.request->ReadJSON();
+        auto name = json.at("name").get<std::string>();
         ctx.response->addBody(name);
         return;
     });
 
-    // server.onError(404, [](vogro::Request& request, vogro::Response& response) {
-    //     response.addBody("<h1>Custom Not Found</h1>");
-    //     return;
-    // });
-
-
-
+    server.onError(404, [](vogro::Request& request, vogro::Response& response) {
+        response.addBody("<h1>Custom Not Found</h1>");
+        return;
+    });
 
     auto userGroup = server.makeGroup("/user", [](vogro::Context& ctx) {
         ctx.response->addBody("hello from group global handler<br>");
@@ -107,6 +105,13 @@ int main()
         ctx.response->redirect(url);
     });
 
+    server.Get("/json/",[](vogro::Context& ctx){
+        nlohmann::json j;
+        j["id"] =1;
+        j["name"] = "andrew";
+        ctx.response->writeJSON(j);
+    });
+    
     server.runServer();
     return 0;
 }

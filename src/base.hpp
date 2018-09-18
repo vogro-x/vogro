@@ -34,7 +34,6 @@
 #include "utils.hpp"
 #include "default_error_handler.hpp"
 #include "logo.hpp"
-// #include "common.hpp"
 
 namespace vogro {
 
@@ -201,23 +200,19 @@ protected:
                     auto request = std::make_shared<vogro::Request>();
                     *request = parse_request(stream);
                     
-                  
                     request->setRemoteIP(socket->lowest_layer().remote_endpoint().address().to_string());
                     request->setRemotePort(socket->lowest_layer().remote_endpoint().port());
     
-                    
                     size_t num_additional_bytes = total - bytes_transferred;
                     if (request->getHeader("Content-Length") != "") {
-                        boost::asio::async_read(
-                            *socket, *read_buffer,
+                        boost::asio::async_read(*socket, *read_buffer,
                             boost::asio::transfer_exactly(
                                 std::stoull(request->getHeader("Content-Length")) - num_additional_bytes),
                             [this, socket, read_buffer,
                                 request](const boost::system::error_code& ec,
                                 size_t bytes_transferred) {
                                 if (!ec) {
-                                    request->ReadJSON(std::shared_ptr<std::istream>(
-                                        new std::istream(read_buffer.get())));
+                                    request->setBody(std::shared_ptr<std::istream>(new std::istream(read_buffer.get())));
                                     respond(socket, request);
                                 }
                             });

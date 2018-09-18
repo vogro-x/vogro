@@ -24,7 +24,7 @@
 #include <unordered_map>
 
 #include "utils.hpp"
-
+#include "json.hpp"
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -51,8 +51,8 @@ private:
     std::string protocol;
 
     // the request body
-    // std::shared_ptr<std::istream> content;
-    pt::ptree jsonTree;
+    std::shared_ptr<std::istream> body;
+    // pt::ptree jsonTree;
 
     // request haeaders are stored in an unordered_map
     std::unordered_map<std::string, std::string> headers;
@@ -129,9 +129,27 @@ public:
         return (got == this->formParam.end()) ? "" : got->second;
     }
 
-    void ReadJSON(std::shared_ptr<std::istream> jsonPtr) { pt::read_json(*jsonPtr, jsonTree); }
+     std::shared_ptr<std::istream> getBody()
+     {
+            return this->body;
+    }
 
-    const pt::ptree& GetJsonTree() { return this->jsonTree; }
+    void setBody(std::shared_ptr<std::istream> p)
+    {
+            this->body = p;
+    }
+
+
+    // void ReadJSON(std::shared_ptr<std::istream> jsonPtr) { pt::read_json(*jsonPtr, jsonTree); }
+
+    nlohmann::json ReadJSON(){
+        std::string s;
+        *body >> s;
+        auto j = nlohmann::json::parse(s);
+        return j;
+    }
+
+    // const pt::ptree& GetJsonTree() { return this->jsonTree; }
 
     std::string getCookie(std::string key = "")
     {
