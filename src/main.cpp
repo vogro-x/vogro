@@ -1,8 +1,10 @@
 #include "handlers.hpp"
-#include "https.hpp"
+#include "http.hpp"
+// #include "https.hpp"
 int main()
 {
-    vogro::Server server(12532, 4,"secret/server.crt","secret/server.key");
+    vogro::Server server(8080, 4);
+    // vogro::Server server(8080,4,"../secret/server.crt","../secret/server.key");
 
     server.Use([](vogro::Context& ctx) {
         std::cout << "coming................" << std::endl;
@@ -81,7 +83,30 @@ int main()
 
     server.Get("/ggg",TestHandler1,TestHandler2,TestHandler3);
 
-    
+    server.Get("/setcookie/",[](vogro::Context& ctx){
+        ctx.response->setCookie("id","123456","/","true","20");
+        ctx.response->addBody("ok");
+    });
+
+    server.Get("/getcookie/",[](vogro::Context& ctx){
+        auto cookie = ctx.request->getCookie();
+        ctx.response->addBody(cookie);
+    });
+
+
+    server.Get("/auth/", [](vogro::Context& ctx ){
+        auto auth =ctx.request->basicAuth();
+        ctx.response->addBody(auth.first);
+        ctx.response->addBody("|");
+        ctx.response->addBody(auth.second);
+
+    });
+
+    server.Get("/redict",[](vogro::Context& ctx){
+        auto url = ctx.request->getQueryParam("url");
+        ctx.response->redirect(url);
+    });
+
     server.runServer();
     return 0;
 }
