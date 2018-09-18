@@ -137,6 +137,12 @@ public:
         this->addHeader("Set-Cookie",ss.str());
     }
 
+
+    void redirect(const std::string location,int code = 307){
+        this->setCode(code);
+        this->addHeader("Location",location);
+    }
+    
     void addBody(std::string cnt) { this->body << cnt; }
 
     std::stringstream& getResponseBodyStrem() { return body; }
