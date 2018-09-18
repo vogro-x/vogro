@@ -33,6 +33,8 @@
 #include "static.hpp"
 #include "utils.hpp"
 #include "default_error_handler.hpp"
+#include "logo.hpp"
+// #include "common.hpp"
 
 namespace vogro {
 
@@ -168,7 +170,7 @@ public:
         for (auto it = vogro_resource.begin(); it != vogro_resource.end(); it++)
             all_resources.push_back(it);
 
-        logger.LOG_INFO("Vogro Server Listened on:", this->port_);
+        printLogo(port_, __VOGRO_VERSION__);
 
         accept();
 

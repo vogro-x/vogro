@@ -31,6 +31,7 @@ enum severity_type {
 #include <sstream>
 #include <string>
 #include <typeinfo>
+#include "utils.hpp"
 
 class BasePolicy {
    public:
@@ -108,15 +109,7 @@ class RemotePolicy : public BasePolicy {
     void write(const std::string &msg) override {}
 };
 
-// color mocro
-// #define	CLEARSCREEN() printf("\033[H\033[2J")
-#define INITCOLOR(color) \
-    std::string("\033[") + std::string(color) + std::string("m")
-#define RED_COLOR "31"
-#define GREEN_COLOR "32"
-#define YELLOW_COLOR "33"
-#define BLUE_COLOR "34"
-#define ZERO_COLOR "0"
+
 
 template <typename policy_type>
 class Logger {

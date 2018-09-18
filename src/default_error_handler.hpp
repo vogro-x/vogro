@@ -18,6 +18,7 @@
 #include "request.hpp"
 #include "response.hpp"
 #include "status.hpp"
+#include "common.hpp"
 
 void DefaultErrorHandler(vogro::Request& request, vogro::Response& response) {
     auto code = response.getCode();
@@ -25,7 +26,7 @@ void DefaultErrorHandler(vogro::Request& request, vogro::Response& response) {
     auto pharse = codeMap.getPharseByCode(code);
     std::stringstream ss;
     ss << "<center><h1>" << code << " " << pharse << "</h1><br/>";
-    ss << "<a href='https://github.com/vogro-x/vogro'>vogro(" << 0.1
+    ss << "<a href='https://github.com/vogro-x/vogro'>vogro(" << __VOGRO_VERSION__
        << ")</a></center>";
     response.addBody(ss.str());
     return;
