@@ -8,7 +8,7 @@
 int main()
 {
     vogro::Server server(8080, 4);
-    // vogro::Server server(8080,4,"../secret/server.crt","../secret/server.key");
+    // vogro::Server server(8080,4,"../cert/server.crt","../cert/server.key");
 
     server.Use(TestMiddleWare1);
     server.Use(TestMiddleWare2);
