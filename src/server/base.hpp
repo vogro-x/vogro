@@ -26,12 +26,12 @@
 #include <typeinfo>
 #include <boost/asio/ssl.hpp>
 
+#include "../utils.hpp"
+#include "../logger.hpp"
+#include "../request.hpp"
+#include "../response.hpp"
 #include "context.hpp"
-#include "logger.hpp"
-#include "request.hpp"
-#include "response.hpp"
 #include "static.hpp"
-#include "utils.hpp"
 #include "default_error_handler.hpp"
 #include "logo.hpp"
 

@@ -18,7 +18,7 @@
 
 #include <iostream>
 #include "base.hpp"
-#include "status.hpp"
+#include "../status.hpp"
 
 
 namespace vogro {

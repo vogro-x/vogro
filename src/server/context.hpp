@@ -16,8 +16,8 @@
 #ifndef __CONTEXT_HPP__
 #define __CONTEXT_HPP__
 
-#include "request.hpp"
-#include "response.hpp"
+#include "../request.hpp"
+#include "../response.hpp"
 
 namespace vogro {
 

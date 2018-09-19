@@ -15,10 +15,10 @@
 #ifndef __DEFAULT_ERROR_HANDLER_HPP__
 #define __DEFAULT_ERROR_HANDLER_HPP__
 
-#include "request.hpp"
-#include "response.hpp"
-#include "status.hpp"
-#include "common.hpp"
+#include "../request.hpp"
+#include "../response.hpp"
+#include "../status.hpp"
+#include "../common.hpp"
 
 void DefaultErrorHandler(vogro::Request& request, vogro::Response& response) {
     auto code = response.getCode();

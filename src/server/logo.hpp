@@ -16,7 +16,7 @@
 #ifndef __VOGRO_LOGO_HPP__
 #define __VOGRO_LOGO_HPP__
 
-#include "utils.hpp"
+#include "../utils.hpp"
 #include <iostream>
 
 void printLogo(unsigned short port, const std::string & version){
@@ -25,8 +25,8 @@ void printLogo(unsigned short port, const std::string & version){
         std::cout<<"        __      __                                                                "<<std::endl;
         std::cout<<"        \\ \\    / /                                                              "<<std::endl;
         std::cout<<"         \\ \\  / /__   __ _ _ __ ___      Vogro Version "<<version               <<std::endl;
-        std::cout<<"          \\ \\/ / _ \\ / _` | '__/ _ \\     Vogro Server Listened on: "<<port       <<std::endl;
-        std::cout<<"           \\  / (_) | (_| | | | (_) |    © 2018 Andrewpqc. All rights reserved."<<std::endl;                      
+        std::cout<<"          \\ \\/ / _ \\ / _` | '__/ _ \\     Vogro Server Listened on: "<<port    <<std::endl;
+        std::cout<<"           \\  / (_) | (_| | | | (_) |    © 2018 Andrewpqc. All rights reserved. "<<std::endl;                      
         std::cout<<"            \\/ \\___/ \\__, |_|  \\___/                                          "<<std::endl;
         std::cout<<"                      __/ |                                                       "<<std::endl;
         std::cout<<"                     |___/                                                        "<<std::endl;
