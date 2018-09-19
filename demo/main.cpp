@@ -1,17 +1,17 @@
 #include "./handler/handlers.hpp"
+#include "./middleware/middleware.hpp"
+
 #include "../src/server/http.hpp"
-#include "../src/json.hpp"
-// #include "https.hpp"
+#include "../src/json.hpp" // for start http server
+// #include "https.hpp" //for start https server
+
 int main()
 {
     vogro::Server server(8080, 4);
     // vogro::Server server(8080,4,"../secret/server.crt","../secret/server.key");
 
-    server.Use([](vogro::Context& ctx) {
-        std::cout << "coming................" << std::endl;
-        ctx.setValue("key", "hhhhhh");
-        ctx.Next();
-    });
+    server.Use(TestMiddleWare1);
+    server.Use(TestMiddleWare2);
 
     server.addRoute("/", "GET", [](vogro::Context& ctx) {
         ctx.response->addBody("<h1>Index Page</h1>");
