@@ -14,92 +14,107 @@
  ************************************************************************/
 #ifndef __VOGRO_TEST_REQUEST_HPP__
 #define __VOGRO_TEST_REQUEST_HPP__
-#include <map>
-#include <vector>
-#include <sstream>
-#include <string>
-#include <iostream>
 #include "../utils.hpp"
 #include "response.hpp"
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
 
-namespace vogro{
-    class Request{
-    private:
-        std::string method;
-        std::string path;
-        std::map<std::string,std::string> queryParams;
-        std::vector<std::pair<std::string,std::string>> headers;
-        std::map<std::string,std::string> pathParams;
-        std::stringstream body;
-    public:
-        Request(const std::string& mtd,const std::string& p):method(mtd),path(p){}
-        Request& withQuery(const std::string& key,const std::string& val){
-            this->queryParams[key]=val;
-            return *this;
-        }
+namespace vogro {
+class Request {
+private:
+    std::string method;
+    std::string path;
+    std::map<std::string, std::string> queryParams;
+    std::vector<std::pair<std::string, std::string>> headers;
+    std::map<std::string, std::string> pathParams;
+    std::stringstream body;
 
-        Request& withBasicAuth(const std::string& username,const std::string& password){
-            auto basicAuthString = username + ":" + password;
-            auto encodedString = "Basic "+ base64_encode((unsigned char *)(basicAuthString.c_str()),basicAuthString.length());
-            return this->withHeader("Authorization",encodedString);
-        }
-        
-        Request& withPath(const std::string& key,const std::string& val){
-            this->pathParams[key]=val;
-            return *this;
-        }
+public:
+    Request(const std::string& mtd, const std::string& p)
+        : method(mtd)
+        , path(p)
+    {
+    }
 
-        Request& withBody(const std::string& bd){
-            this->body << bd;
-            return *this;
-        }
-        
-        Request& withHeader(const std::string& key,const std::string& val){
-            auto header = std::make_pair(key,val);
-            this->headers.push_back(header);
-            return *this;
-        }
+    Request& withQuery(const std::string& key, const std::string& val)
+    {
+        this->queryParams[key] = val;
+        return *this;
+    }
 
-        std::string getFinalPath(){
-            std::stringstream pathStream;
-            if(this->path.back()!='/')
-                this->path += '/';
-            
-            pathStream <<this->path;
-            
-            if(this->pathParams.size()!=0)
-                pathStream <<"?";
+    Request& withBasicAuth(const std::string& username, const std::string& password)
+    {
+        auto basicAuthString = username + ":" + password;
+        auto encodedString = "Basic " + base64_encode((unsigned char*)(basicAuthString.c_str()), basicAuthString.length());
+        return this->withHeader("Authorization", encodedString);
+    }
 
-            for(auto it=queryParams.begin();it!=queryParams.end();it++)
-                pathStream <<it->first<<"="<<it->second<<"&";
-                
-            auto finalPath = pathStream.str();
-            if(finalPath.back()=='&') finalPath.pop_back();
-            return finalPath;
+    Request& withPath(const std::string& key, const std::string& val)
+    {
+        this->pathParams[key] = val;
+        return *this;
+    }
+
+    Request& withBody(const std::string& bd)
+    {
+        this->body << bd;
+        return *this;
+    }
+
+    Request& withHeader(const std::string& key, const std::string& val)
+    {
+        auto header = std::make_pair(key, val);
+        this->headers.push_back(header);
+        return *this;
+    }
+
+    std::string getFinalPath()
+    {
+        std::stringstream pathStream;
+        if (this->path.back() != '/')
+            this->path += '/';
+
+        pathStream << this->path;
+
+        if (this->pathParams.size() != 0)
+            pathStream << "?";
+
+        for (auto it = queryParams.begin(); it != queryParams.end(); it++)
+            pathStream << it->first << "=" << it->second << "&";
+
+        auto finalPath = pathStream.str();
+        if (finalPath.back() == '&')
+            finalPath.pop_back();
+        return finalPath;
+    }
+
+    std::string makeRequestMessage()
+    {
+        std::stringstream ss;
+        ss << this->method << " " << this->getFinalPath() << " HTTP/1.1\r\n";
+        for (auto h : this->headers) {
+            ss << h.first << ": " << h.second << "\r\n";
         }
+        ss << "\r\n";
+        ss << this->body.str();
+        return ss.str();
+    }
 
-        std::string makeRequestMessage(){
-            std::stringstream ss;
-            ss << this->method << " " << this->getFinalPath() << " HTTP/1.1\r\n";
-            for(auto h: this->headers){
-                ss << h.first<<": "<<h.second<<"\r\n";
-            }
-            ss<<"\r\n";
-            ss << this->body.str();
-            return ss.str();
-        }
-
-        Response& Expect(){
-            auto res = std::make_shared<Response>();
-            res->setCode(200);
-            res->setBody("this is a body");
-            res->addHeader("A","aaaaa");
-            res->addHeader("B","bbbbb");
-            return *res;
-        }
-
-    };
-}
+    Response& Expect()
+    {   
+        // TODO
+        // 1.send the request
+        // 2.parse the response
+        auto res = std::make_shared<Response>();
+        res->code = 200;
+        res->body ="a test body";
+        res->headers["A"]="aaaaa";
+        res->headers["B"]="bbbbb";
+        return *res;
+    }
+};
+} // namespace vogro
 #endif
-
-

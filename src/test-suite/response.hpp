@@ -12,87 +12,103 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  ************************************************************************/
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <map>
 #include <cassert>
+#include <iostream>
+#include <map>
 #include <memory>
+#include <sstream>
+#include <string>
 namespace vogro {
 
-    class HeaderExpectation {
-        private:
-            std::map<std::string,std::string> headers;
-        public:
-        HeaderExpectation(std::map<std::string,std::string> & hdrs):headers(hdrs){}
-        HeaderExpectation& Contains(const std::string & header_key, const std::string& header_val){
-            auto h = this->headers.find(header_key);
-            assert( h!=this->headers.end() && h->second == header_val);
-            return *this;
-        }
+class HeaderExpectation {
+private:
+    std::map<std::string, std::string> headers;
 
-        HeaderExpectation& NotContains(const std::string& header_key, const std::string& header_val) {
-            auto h= this->headers.find(header_key);
-            assert( h==this->headers.end() ||h->second != header_val );
-            return *this;
-        }
+public:
+    HeaderExpectation(const std::map<std::string, std::string>& hdrs)
+        : headers(hdrs)
+    {
+    }
 
-    };
+    HeaderExpectation& Contains(const std::string& header_key, const std::string& header_val)
+    {
+        auto h = this->headers.find(header_key);
+        assert(h != this->headers.end() && h->second == header_val);
+        return *this;
+    }
 
-    class BodyExpectation {
-        private:
-            std::string body;
-        public:
-        BodyExpectation(std::string& bd):body(bd) {}
-        BodyExpectation& Contains(const std::string& x) {
-            std::size_t found = this->body.find(x);
-            std::cout<<"hhhh"<<std::endl;
+    HeaderExpectation& NotContains(const std::string& header_key, const std::string& header_val)
+    {
+        auto h = this->headers.find(header_key);
+        assert(h == this->headers.end() || h->second != header_val);
+        return *this;
+    }
+};
 
-            assert(found != std::string::npos);
-            return *this;
-        }
+class BodyExpectation {
+private:
+    std::string body;
 
-        BodyExpectation& NotContains(const std::string& x) {
-            std::size_t found = this->body.find(x);
-            assert(found == std::string::npos);
-            return *this;
-        }
+public:
+    BodyExpectation(const std::string bd)
+        : body(bd)
+    {
+    }
 
-        BodyExpectation& Equal(const std::string& bd){
-            assert(this->body == bd);
-            return *this;
-        }
+    BodyExpectation& Contains(const std::string& x)
+    {
+        size_t found = this->body.find(x);
+        assert(found != std::string::npos);
+        return *this;
+    }
 
-        BodyExpectation& NotEqual(const std::string& bd){
-            assert(this->body != bd);
-            return *this;
-        }
-    };
+    BodyExpectation& NotContains(const std::string& x)
+    {
+        std::size_t found = this->body.find(x);
+        assert(found == std::string::npos);
+        return *this;
+    }
 
-    class Response {
-    private:
-        int code;
-        std::map<std::string,std::string> headers;
-        std::string body;
-        void setCode(const int code){ this->code =code; }
-        void addHeader(const std::string& key,const std::string& val){this->headers[key]=val; }
-        void setBody(const std::string& bd){this->body = bd;}
-    public:
-        friend class Request;
-        Response(){}
-        Response& Status(int code){
-            std::cout<<"status"<<std::endl;
-            assert(this->code == code);
-            return *this;
-        }
-        HeaderExpectation& Header(){
-            auto hp = std::shared_ptr<HeaderExpectation>( new HeaderExpectation(this->headers));
-            return *hp;
-        }
+    BodyExpectation& Equal(const std::string& bd)
+    {
+        assert(this->body == bd);
+        return *this;
+    }
 
-        BodyExpectation& Body() {
-            auto bd =std::shared_ptr<BodyExpectation>(new BodyExpectation(this->body));
-            return *bd;
-        }
-    };
-}
+    BodyExpectation& NotEqual(const std::string& bd)
+    {
+        assert(this->body != bd);
+        return *this;
+    }
+};
+
+class Response {
+private:
+    int code;
+    std::map<std::string, std::string> headers;
+    std::string body;
+
+public:
+    friend class Request;
+
+    Response() {}
+
+    Response& Status(int c)
+    {
+        assert(this->code == c);
+        return *this;
+    }
+
+    HeaderExpectation& Header()
+    {
+        auto hp = std::make_shared<HeaderExpectation>(this->headers);
+        return *hp;
+    }
+
+    BodyExpectation& Body()
+    {
+        auto bd = std::make_shared<BodyExpectation>(this->body);
+        return *bd;
+    }
+};
+} //namespace vogro
