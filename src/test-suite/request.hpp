@@ -19,6 +19,8 @@
 #include <sstream>
 #include <string>
 #include <iostream>
+#include "../utils.hpp"
+#include "response.hpp"
 
 namespace vogro{
     class Request{
@@ -28,18 +30,30 @@ namespace vogro{
         std::map<std::string,std::string> queryParams;
         std::vector<std::pair<std::string,std::string>> headers;
         std::map<std::string,std::string> pathParams;
+        std::stringstream body;
     public:
         Request(const std::string& mtd,const std::string& p):method(mtd),path(p){}
         Request& withQuery(const std::string& key,const std::string& val){
             this->queryParams[key]=val;
             return *this;
         }
-        Request& withBasicAuth();
+
+        Request& withBasicAuth(const std::string& username,const std::string& password){
+            auto basicAuthString = username + ":" + password;
+            auto encodedString = "Basic "+ base64_encode((unsigned char *)(basicAuthString.c_str()),basicAuthString.length());
+            return this->withHeader("Authorization",encodedString);
+        }
+        
         Request& withPath(const std::string& key,const std::string& val){
             this->pathParams[key]=val;
             return *this;
         }
 
+        Request& withBody(const std::string& bd){
+            this->body << bd;
+            return *this;
+        }
+        
         Request& withHeader(const std::string& key,const std::string& val){
             auto header = std::make_pair(key,val);
             this->headers.push_back(header);
@@ -55,12 +69,13 @@ namespace vogro{
             
             if(this->pathParams.size()!=0)
                 pathStream <<"?";
-                
-            for(auto it=pathParams.begin();it!=pathParams.end();it++){
-                pathStream <<it->first<<"="<<it->second<<"&";
-            }
 
-            return pathStream.str();
+            for(auto it=queryParams.begin();it!=queryParams.end();it++)
+                pathStream <<it->first<<"="<<it->second<<"&";
+                
+            auto finalPath = pathStream.str();
+            if(finalPath.back()=='&') finalPath.pop_back();
+            return finalPath;
         }
 
         std::string makeRequestMessage(){
@@ -70,7 +85,17 @@ namespace vogro{
                 ss << h.first<<": "<<h.second<<"\r\n";
             }
             ss<<"\r\n";
+            ss << this->body.str();
             return ss.str();
+        }
+
+        Response& Expect(){
+            auto res = std::make_shared<Response>();
+            res->setCode(200);
+            res->setBody("this is a body");
+            res->addHeader("A","aaaaa");
+            res->addHeader("B","bbbbb");
+            return *res;
         }
 
     };
