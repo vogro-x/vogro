@@ -34,18 +34,20 @@ enum severity_type {
 #include "utils.hpp"
 
 class BasePolicy {
-   public:
+public:
     virtual void open_ostream() = 0;
+
     virtual void close_ostream() = 0;
+
     virtual void write(const std::string &msg) = 0;
 };
 
 class FilePolicy : public BasePolicy {
-   private:
+private:
     std::string filename;
-    std::unique_ptr<std::ofstream> out_stream;
+    std::unique_ptr <std::ofstream> out_stream;
 
-   public:
+public:
     FilePolicy(std::string &f) : filename(f), out_stream(new std::ofstream) {
         this->open_ostream();
     }
@@ -60,13 +62,14 @@ class FilePolicy : public BasePolicy {
     void write(const std::string &msg) override {
         *(this->out_stream) << msg << std::endl;
     }
+
     ~FilePolicy() { this->close_ostream(); }
 };
 
 class TerminalPolicy : public BasePolicy {
-   public:
+public:
     // placehold 保持接口一致
-    TerminalPolicy(std::string &placehold){};
+    TerminalPolicy(std::string &placehold) {};
 
     void open_ostream() override {
         // do nothing
@@ -83,11 +86,11 @@ class TerminalPolicy : public BasePolicy {
 
 // remaining impl
 class RemotePolicy : public BasePolicy {
-   private:
+private:
     std::string remote_host;
     unsigned short remote_port;
 
-   public:
+public:
     RemotePolicy(std::string &addr) {
         auto pos = addr.find_first_of(":");
         this->remote_host = addr.substr(0, pos);
@@ -110,25 +113,25 @@ class RemotePolicy : public BasePolicy {
 };
 
 
-
-template <typename policy_type>
+template<typename policy_type>
 class Logger {
-   public:
+public:
     static Logger &getLoggerInstance(std::string filename_or_addr) {
         static Logger logger(filename_or_addr);
         return logger;
     }
 
     Logger(const Logger &) = delete;
+
     Logger &operator=(const Logger &) = delete;
 
     // template<typename...Args>
-    template <severity_type severity, typename... Args>
+    template<severity_type severity, typename... Args>
     void PrintLog(const Args &... args) {
         // init p and ssp only once
         if (!p) {
             p = std::shared_ptr<policy_type>(
-                new policy_type(this->filename_or_addr));
+                    new policy_type(this->filename_or_addr));
             std::string t = typeid(decltype(*p)).name();
             if (t == "14TerminalPolicy") {
                 this->is_terminal = true;
@@ -175,33 +178,33 @@ class Logger {
         this->print_impl(args...);
     }
 
-    template <typename... Args>
+    template<typename... Args>
     void LOG_INFO(const Args &... args) {
         this->PrintLog<severity_type::info>(args...);
     }
 
-    template <typename... Args>
+    template<typename... Args>
     void LOG_DEBUG(const Args &... args) {
         this->PrintLog<severity_type::debug>(args...);
     }
 
-    template <typename... Args>
+    template<typename... Args>
     void LOG_WARN(const Args &... args) {
         this->PrintLog<severity_type::warn>(args...);
     }
 
-    template <typename... Args>
+    template<typename... Args>
     void LOG_ERROR(const Args &... args) {
         this->PrintLog<severity_type::error>(args...);
     }
 
-   private:
+private:
     // policy_type policy;
-    std::shared_ptr<policy_type> p;
+    std::shared_ptr <policy_type> p;
 
     std::string filename_or_addr;
 
-    std::shared_ptr<std::stringstream> ssp;
+    std::shared_ptr <std::stringstream> ssp;
 
     bool is_terminal = false;
 
@@ -210,7 +213,7 @@ class Logger {
         ssp->str("");  // ssp->empty(),ssp->clear() can not clean ssp
     }
 
-    template <typename First, typename... Rest>
+    template<typename First, typename... Rest>
     void print_impl(const First &parm1, const Rest &... parm) {
         (*ssp) << parm1 << " ";
         print_impl(parm...);

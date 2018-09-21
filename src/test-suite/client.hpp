@@ -15,16 +15,37 @@
 #ifndef __VOGRO_TEST_CLIENT_HPP__
 #define __VOGRO_TEST_CLIENT_HPP__
 
+#include "../request.hpp"
 #include <iostream>
 #include <string>
+#include <boost/asio.hpp>
+using boost::asio::ip::tcp;
 namespace vogro {
 
 class VogroTestClient {
 private:
     std::string serverIP;
-    unsigned short serverPort;
+    std::string serverPort;
+    boost::asio::io_service io_service;
+
+    tcp::resolver resolver(io_service);
+    tcp::resolver::query query;
+    tcp::resolver::iterator endpoint_iterator;
+    tcp::socket socket;
+
 public:
-    void Get();
+    VogroTestClient(const std::string& ip,const::std::string port):serverIP(ip),serverPort(port){
+
+        this->query = tcp::resolver::query(this->serverIP,this->serverPort);
+        this->endpoint_iterator =this->resolver.resolve(this->query);
+        this->socket =tcp::socket(this->io_service);
+    }
+    void Get(std::string path){
+        boost::asio::connect(this->socket, this->endpoint_iterator);
+        Request r;
+        
+
+    }
     void POST();
     void PUT();
     void DELETE();
