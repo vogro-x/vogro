@@ -6,9 +6,11 @@ int main(void)
 {
     vogro::VogroTestClient client("127.0.0.1", "8080");
 
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < 1; i++) {
 
         client.Get("/").Expect().Body().Contains("Page");
+
+        client.Get("/username/{name}/").withPath("name","Andrewpqc").Expect().Body().Contains("Andrewpqc");
 
         client.Get("/user/get/").Expect().Status(200).Body().Contains("hello");
 

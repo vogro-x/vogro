@@ -12,12 +12,16 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  ************************************************************************/
+#ifndef __VOGRO_TEST_RESPONSE_HPP__
+#define __VOGRO_TEST_RESPONSE_HPP__
+
 #include <cassert>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <sstream>
 #include <string>
+
 namespace vogro {
 
 class HeaderExpectation {
@@ -28,6 +32,11 @@ public:
     HeaderExpectation(const std::map<std::string, std::string>& hdrs)
         : headers(hdrs)
     {
+    }
+
+    const std::string Raw(const std::string & header_key){
+        auto got = this->headers.find(header_key);
+        return (got == this->headers.end()) ? "" : got->second;
     }
 
     HeaderExpectation& Contains(const std::string& header_key, const std::string& header_val)
@@ -53,6 +62,10 @@ public:
     BodyExpectation(const std::string bd)
         : body(bd)
     {
+    }
+
+    const std::string Raw(){
+        return this->body;
     }
 
     BodyExpectation& Contains(const std::string& x)
@@ -112,3 +125,5 @@ public:
     }
 };
 } //namespace vogro
+
+#endif

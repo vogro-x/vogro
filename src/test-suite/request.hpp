@@ -14,15 +14,18 @@
  ************************************************************************/
 #ifndef __VOGRO_TEST_REQUEST_HPP__
 #define __VOGRO_TEST_REQUEST_HPP__
+
 #include "../utils.hpp"
 #include "response.hpp"
+#include <boost/asio.hpp>
 #include <iostream>
 #include <map>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <boost/asio.hpp>
+
 using boost::asio::ip::tcp;
+
 namespace vogro {
 class Request {
 private:
@@ -35,14 +38,67 @@ private:
 
     std::shared_ptr<boost::asio::ip::tcp::socket>& socket;
 
+    std::string getFinalPath()
+    {
+        std::stringstream pathStream;
+        auto realPath = get_real_path(this->path, this->pathParams);
+        pathStream << realPath;
+
+        if (this->queryParams.size() != 0) {
+            pathStream << "?";
+        }
+
+        for (auto it = queryParams.begin(); it != queryParams.end(); it++)
+            pathStream << it->first << "=" << it->second << "&";
+
+        auto finalPath = pathStream.str();
+        if (finalPath.back() == '&')
+            finalPath.pop_back();
+        return finalPath;
+    }
+
+    std::string get_real_path(const std::string& originPath,
+        const std::map<std::string, std::string>& pathParam)
+    {
+        auto length = originPath.length();
+        std::string realPath;
+        for (int i = 0; i < length; i++) {
+            if (originPath[i] == '{') {
+                std::string key = "";
+                for (int j = i + 1; j < length; j++) {
+                    if (originPath[j] == '}') {
+                        auto got = pathParam.find(key);
+                        if (got == pathParam.end()) {
+                            std::cout << "Fatal: Lock of path Parameter " << key << std::endl;
+                            exit(1);
+                        } else {
+                            realPath += got->second;
+                            i = j;
+                            break;
+                        }
+                    } else {
+                        key += originPath[j];
+                    }
+                }
+            } else {
+                realPath += originPath[i];
+            }
+        }
+
+        if (realPath.back() != '/')
+            realPath += '/';
+
+        return realPath;
+    }
+
 public:
-    Request(const std::string& mtd, const std::string& p,
-            std::shared_ptr<boost::asio::ip::tcp::socket>& sock)
+    Request(const std::string& mtd, const std::string p,
+        std::shared_ptr<boost::asio::ip::tcp::socket>& sock)
         : method(mtd)
         , path(p)
         , socket(sock)
-        {
-        }
+    {
+    }
 
     Request& withQuery(const std::string& key, const std::string& val)
     {
@@ -76,27 +132,6 @@ public:
         return *this;
     }
 
-    std::string getFinalPath()
-    {
-        std::stringstream pathStream;
-        if (this->path.back() != '/')
-            this->path += '/';
-
-        pathStream << this->path;
-
-        if (this->queryParams.size() != 0){
-            pathStream << "?";
-        }
-
-        for (auto it = queryParams.begin(); it != queryParams.end(); it++)
-            pathStream << it->first << "=" << it->second << "&";
-
-        auto finalPath = pathStream.str();
-        if (finalPath.back() == '&')
-            finalPath.pop_back();
-        return finalPath;
-    }
-
     std::string makeRequestMessage()
     {
         std::stringstream ss;
@@ -110,12 +145,12 @@ public:
     }
 
     Response& Expect()
-    {   
+    {
         boost::asio::streambuf request_buffer;
         std::ostream request_stream(&request_buffer);
         request_stream << this->makeRequestMessage();
         boost::asio::write(*socket, request_buffer);
-         
+
         boost::asio::streambuf response_buffer;
         boost::asio::read_until(*socket, response_buffer, "\r\n");
         std::istream response_stream(&response_buffer);
@@ -131,31 +166,31 @@ public:
         std::getline(response_stream, status_message);
         res->code = status_code;
 
-
         auto bytes_transfered = boost::asio::read_until(*socket, response_buffer, "\r\n\r\n");
 
         auto total = response_buffer.size();
 
         std::string header;
-        while (std::getline(response_stream, header) && header != "\r"){
+        while (std::getline(response_stream, header) && header != "\r") {
             auto parse_result = parse_header(header);
             res->headers[parse_result.first] = parse_result.second;
         }
-        
-        auto bodyLength = (res->headers.find("Content-Length")== res->headers.end()) ? "0" :res->headers["Content-Length"];
+
+        auto bodyLength = (res->headers.find("Content-Length") == res->headers.end()) ? "0" : res->headers["Content-Length"];
         auto Length = std::stoull(bodyLength);
-        auto additional_bytes_num = total -bytes_transfered;
-        auto remain =Length - additional_bytes_num;
-        std::cout<<remain<<std::endl;
-        if(remain>0) {
-             boost::system::error_code error;
-            boost::asio::read(*socket, response_buffer,boost::asio::transfer_exactly(remain), error);
+        auto additional_bytes_num = total - bytes_transfered;
+        auto remain = Length - additional_bytes_num;
+        std::cout << remain << std::endl;
+        if (remain > 0) {
+            boost::system::error_code error;
+            boost::asio::read(*socket, response_buffer, boost::asio::transfer_exactly(remain), error);
         }
-            std::stringstream mybody;
-            mybody << &response_buffer;
-            
-            res->body = mybody.str();
-            std::cout<<res->body<<std::endl<<std::endl;
+        std::stringstream mybody;
+        mybody << &response_buffer;
+
+        res->body = mybody.str();
+        std::cout << res->body << std::endl
+                  << std::endl;
         return *res;
     }
 };
