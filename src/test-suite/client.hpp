@@ -34,15 +34,17 @@ private:
     // tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
 
     // // Try each endpoint until we successfully establish a connection.
-    boost::asio::ip::tcp::socket socket;
+     boost::asio::io_service ios;
+    std::shared_ptr<boost::asio::ip::tcp::socket> socket = std::make_shared<boost::asio::ip::tcp::socket>(ios);
+   
 
 public:
     VogroTestClient(const std::string& ip, const::std::string& port):serverIP(ip),serverPort(port){
         // std::string host = "samplehost.book";
         // std::string port_num = "3333";
-
+            // (*socket)(this->ios);
         // Used by a 'resolver' and a 'socket'.
-        boost::asio::io_service ios;
+        // boost::asio::io_service ios;
 
         // Creating a resolver's query.
         boost::asio::ip::tcp::resolver::query resolver_query(this->serverIP, this->serverPort,
@@ -57,13 +59,13 @@ public:
 
             // Step 3. Creating a socket.
             // sock(ios);
-            this->socket =  boost::asio::ip::tcp::socket(ios) ;
+            // this->socket =  boost::asio::ip::tcp::socket(ios) ;
             // Step 4. asio::connect() method iterates over
             // each endpoint until successfully connects to one
             // of them. It will throw an exception if it fails
             // to connect to all the endpoints or if other
             // error occurs.
-            boost::asio::connect(this->socket, it);
+            boost::asio::connect(*socket, it);
         }catch (boost::system::system_error &e) {
             std::cout<<e.what()<<std::endl;
         }
