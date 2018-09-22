@@ -34,17 +34,15 @@ private:
     std::stringstream body;
 
     std::shared_ptr<boost::asio::ip::tcp::socket>& socket;
-    // tcp::resolver::iterator endpoint_iterator;
+
 public:
     Request(const std::string& mtd, const std::string& p,
             std::shared_ptr<boost::asio::ip::tcp::socket>& sock)
         : method(mtd)
         , path(p)
         , socket(sock)
-        // , endpoint_iterator(ep_iter)
-    {
-        // this->socket = sock;
-    }
+        {
+        }
 
     Request& withQuery(const std::string& key, const std::string& val)
     {
@@ -113,20 +111,11 @@ public:
 
     Response& Expect()
     {   
-        // TODO
-        // 1.send the request
-        // 2.parse the response
-        // boost::asio::connect(this->socket, this->endpoint_iterator);
-
         boost::asio::streambuf request_buffer;
         std::ostream request_stream(&request_buffer);
-
         request_stream << this->makeRequestMessage();
-        
         boost::asio::write(*socket, request_buffer);
          
-        
-
         boost::asio::streambuf response_buffer;
         boost::asio::read_until(*socket, response_buffer, "\r\n");
         std::istream response_stream(&response_buffer);
@@ -142,18 +131,17 @@ public:
         std::getline(response_stream, status_message);
         res->code = status_code;
 
+
+        auto bytes_transfered = boost::asio::read_until(*socket, response_buffer, "\r\n\r\n");
+
         auto total = response_buffer.size();
 
-       auto bytes_transfered = boost::asio::read_until(*socket, response_buffer, "\r\n\r\n");
         std::string header;
         while (std::getline(response_stream, header) && header != "\r"){
             auto parse_result = parse_header(header);
             res->headers[parse_result.first] = parse_result.second;
-            std::cout<<parse_result.first<<"|"<<parse_result.second<<std::endl;
         }
         
-        
-        // std::cout<<&response_buffer ;
         auto bodyLength = (res->headers.find("Content-Length")== res->headers.end()) ? "0" :res->headers["Content-Length"];
         auto Length = std::stoull(bodyLength);
         auto additional_bytes_num = total -bytes_transfered;
@@ -162,29 +150,12 @@ public:
         if(remain>0) {
              boost::system::error_code error;
             boost::asio::read(*socket, response_buffer,boost::asio::transfer_exactly(remain), error);
-                // std::string res_body;
-                // response_stream >> res_body;
-                // res->body += res_body;
-                
-        
         }
-            std::cout<<&response_buffer<<std::endl;
-
-        // if (response_buffer.size() > 0)
-        //     std::cout << &response_buffer<<std::endl;
-        //     std::stringstream ss;
-        //     response_buffer >> ss.rdbuf();
-        //     res->body = ss.str();
-        //     res->body = &response_buffer;
-        // std::cout<<"read body"<<std::endl;
-        // boost::system::error_code error;
-        // while (boost::asio::read(*socket, response_buffer,boost::asio::transfer_at_least(1), error)){
-        //     std::string res_body;
-        //     response_stream >> res_body;
-        //     res->body += res_body;
-        // }
-        // if (error != boost::asio::error::eof) throw boost::system::system_error(error);
-       
+            std::stringstream mybody;
+            mybody << &response_buffer;
+            
+            res->body = mybody.str();
+            std::cout<<res->body<<std::endl<<std::endl;
         return *res;
     }
 };
