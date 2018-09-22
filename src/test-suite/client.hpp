@@ -15,7 +15,7 @@
 #ifndef __VOGRO_TEST_CLIENT_HPP__
 #define __VOGRO_TEST_CLIENT_HPP__
 
-#include "../request.hpp"
+#include "request.hpp"
 #include <iostream>
 #include <string>
 #include <boost/asio.hpp>
@@ -26,29 +26,72 @@ class VogroTestClient {
 private:
     std::string serverIP;
     std::string serverPort;
-    boost::asio::io_service io_service;
+    // boost::asio::io_service io;
 
-    tcp::resolver resolver(io_service);
-    tcp::resolver::query query;
-    tcp::resolver::iterator endpoint_iterator;
-    tcp::socket socket;
+    // // Get a list of endpoints corresponding to the server name.
+    // tcp::resolver resolver(io);
+    // tcp::resolver::query query(serverIP.c_str(), serverPort.c_str());
+    // tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
+
+    // // Try each endpoint until we successfully establish a connection.
+    boost::asio::ip::tcp::socket socket;
 
 public:
-    VogroTestClient(const std::string& ip,const::std::string port):serverIP(ip),serverPort(port){
+    VogroTestClient(const std::string& ip, const::std::string& port):serverIP(ip),serverPort(port){
+        // std::string host = "samplehost.book";
+        // std::string port_num = "3333";
 
-        this->query = tcp::resolver::query(this->serverIP,this->serverPort);
-        this->endpoint_iterator =this->resolver.resolve(this->query);
-        this->socket =tcp::socket(this->io_service);
-    }
-    void Get(std::string path){
-        boost::asio::connect(this->socket, this->endpoint_iterator);
-        Request r;
-        
+        // Used by a 'resolver' and a 'socket'.
+        boost::asio::io_service ios;
 
+        // Creating a resolver's query.
+        boost::asio::ip::tcp::resolver::query resolver_query(this->serverIP, this->serverPort,
+            boost::asio::ip::tcp::resolver::query::numeric_service);
+
+        // Creating a resolver.
+        boost::asio::ip::tcp::resolver resolver(ios);
+
+        try {
+            // Step 2. Resolving a DNS name.
+            boost::asio::ip::tcp::resolver::iterator it = resolver.resolve(resolver_query);
+
+            // Step 3. Creating a socket.
+            // sock(ios);
+            this->socket =  boost::asio::ip::tcp::socket(ios) ;
+            // Step 4. asio::connect() method iterates over
+            // each endpoint until successfully connects to one
+            // of them. It will throw an exception if it fails
+            // to connect to all the endpoints or if other
+            // error occurs.
+            boost::asio::connect(this->socket, it);
+        }catch (boost::system::system_error &e) {
+            std::cout<<e.what()<<std::endl;
+        }
+
+            }
+    Request& Get(std::string path){
+        // boost::asio::connect(this->socket, this->endpoint_iterator);
+        auto p = std::make_shared<Request>("GET",path, this->socket);
+        return *p;
     }
-    void POST();
-    void PUT();
-    void DELETE();
+
+    Request& POST(std::string path){
+        // boost::asio::connect(this->socket);
+        auto p = std::make_shared<Request>("POST",path,this->socket);
+        return *p;
+    }
+
+    Request& PUT(std::string path){
+        // boost::asio::connect(this->socket, this->endpoint_iterator);
+        auto p = std::make_shared<Request>("PUT",path,this->socket);
+        return *p;
+    }
+    
+    Request& DELETE(std::string path){
+        // boost::asio::connect(this->socket, this->endpoint_iterator);
+        auto p = std::make_shared<Request>("DELETE",path,this->socket);
+        return *p;
+    }
 
 
 };

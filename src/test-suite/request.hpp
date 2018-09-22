@@ -21,7 +21,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
+#include <boost/asio.hpp>
+using boost::asio::ip::tcp;
 namespace vogro {
 class Request {
 private:
@@ -32,11 +33,17 @@ private:
     std::map<std::string, std::string> pathParams;
     std::stringstream body;
 
+    tcp::socket socket;
+    // tcp::resolver::iterator endpoint_iterator;
 public:
-    Request(const std::string& mtd, const std::string& p)
+    Request(const std::string& mtd, const std::string& p,
+            const tcp::socket & sock)
         : method(mtd)
         , path(p)
+        // , socket(sock)
+        // , endpoint_iterator(ep_iter)
     {
+        this->socket = sock;
     }
 
     Request& withQuery(const std::string& key, const std::string& val)
@@ -108,11 +115,46 @@ public:
         // TODO
         // 1.send the request
         // 2.parse the response
+        // boost::asio::connect(this->socket, this->endpoint_iterator);
+
+        boost::asio::streambuf request_buffer;
+        std::ostream request_stream(&request_buffer);
+
+        request_stream << this->makeRequestMessage();
+        
+        boost::asio::write(this->socket, request_buffer);
+
+        boost::asio::streambuf response_buffer;
+        boost::asio::read_until(this->socket, response_buffer, "\r\n");
+        std::istream response_stream(&response_buffer);
+
         auto res = std::make_shared<Response>();
-        res->code = 200;
-        res->body ="a test body";
-        res->headers["A"]="aaaaa";
-        res->headers["B"]="bbbbb";
+
+        std::string http_version;
+        int status_code;
+        std::string status_message;
+
+        response_stream >> http_version;
+        response_stream >> status_code;
+        res->code = status_code;
+
+        boost::asio::read_until(this->socket, response_buffer, "\r\n\r\n");
+
+        std::string header;
+        while (std::getline(response_stream, header) && header != "\r"){
+            auto parse_result = parse_header(header);
+            res->headers[parse_result.first] = parse_result.second;
+            std::cout<<parse_result.first<<"|"<<parse_result.second<<std::endl;
+        }
+        
+        boost::system::error_code error;
+        while (boost::asio::read(socket, response_buffer,boost::asio::transfer_at_least(1), error)){
+            std::string res_body;
+            response_stream >> res_body;
+            res->body += res_body;
+        }
+        if (error != boost::asio::error::eof) throw boost::system::system_error(error);
+       
         return *res;
     }
 };
