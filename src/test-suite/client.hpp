@@ -55,17 +55,17 @@ public:
         return *p;
     }
 
-    Request& POST(std::string path){
+    Request& Post(std::string path){
         auto p = std::make_shared<Request>("POST",path,this->socket,this->serverIP,this->serverPort);
         return *p;
     }
 
-    Request& PUT(std::string path){
+    Request& Put(std::string path){
         auto p = std::make_shared<Request>("PUT",path,this->socket, this->serverIP, this->serverPort);
         return *p;
     }
     
-    Request& DELETE(std::string path){
+    Request& Delete(std::string path){
         auto p = std::make_shared<Request>("DELETE",path,this->socket, this->serverIP, this->serverPort);
         return *p;
     }
