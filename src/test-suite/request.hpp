@@ -23,7 +23,6 @@
 #include <map>
 #include <sstream>
 #include <string>
-#include <vector>
 
 using boost::asio::ip::tcp;
 
@@ -31,11 +30,17 @@ namespace vogro {
 
 class Request {
 private:
-    std::string method;
-    std::string pathTpl;
+    const std::string ip;
+    const std::string port;
+
+    const std::string method;
+    const std::string& pathTpl; // MUST reference 
+    
+    
+    std::map<std::string, std::string> headers;
     std::map<std::string, std::string> queryParams;
-    std::vector<std::pair<std::string, std::string>> headers;
     std::map<std::string, std::string> pathParams;
+    
     std::stringstream body;
 
     std::shared_ptr<boost::asio::ip::tcp::socket>& socket;
@@ -63,7 +68,7 @@ private:
         const std::map<std::string, std::string>& pathParam)
     {
         auto length = originPath.length();
-        std::string realPath="";
+        std::string realPath = "";
         for (int i = 0; i < length; i++) {
             if (originPath[i] == '{') {
                 std::string key = "";
@@ -94,19 +99,16 @@ private:
 
 public:
     Request(const std::string& mthd, const std::string& p,
-        std::shared_ptr<boost::asio::ip::tcp::socket>& sock, 
-        const std::string &serverIP,const std::string& serverPort)
+        std::shared_ptr<boost::asio::ip::tcp::socket>& sock,
+        const std::string& serverIP, const std::string& serverPort)
         : method(mthd)
         , pathTpl(p)
         , socket(sock)
+        , ip(serverIP)
+        , port(serverPort)
     {
-        auto host_header = std::make_pair("Host",serverIP+":"+serverPort);
-        this->headers.push_back(host_header); 
     }
-    std::string getPathTpl(){
-        return this->pathTpl;
-    }
-
+    
     Request& withQuery(const std::string& key, const std::string& val)
     {
         this->queryParams[key] = val;
@@ -132,24 +134,30 @@ public:
         this->body.seekp(0, std::ios::end);
         auto length = this->body.tellp();
         this->body.seekg(0, std::ios::beg);
-        this->withHeader("Content-Length",std::to_string(length));
+        this->headers["Content-Length"] = std::to_string(length);
         return *this;
     }
 
     Request& withHeader(const std::string& key, const std::string& val)
     {
-        auto header = std::make_pair(key, val);
-        this->headers.push_back(header);
+        this->headers[key] = val;
         return *this;
     }
 
     std::string makeRequestMessage()
-    {   
+    {
+        // HTTP request must contain the Host header
+        auto host_str = this->ip + ":" + this->port;
+        this->headers["Host"] = host_str;
+
+        std::cout<<"pp:"<<this->pathTpl<<std::endl;
         std::stringstream ss;
         ss << this->method << " " << this->getFinalPath() << " HTTP/1.1\r\n";
+
         for (auto h : this->headers) {
             ss << h.first << ": " << h.second << "\r\n";
         }
+
         ss << "\r\n";
         ss << this->body.str();
         return ss.str();
@@ -157,6 +165,7 @@ public:
 
     Response& Expect()
     {
+
         boost::asio::streambuf request_buffer;
         std::ostream request_stream(&request_buffer);
         request_stream << this->makeRequestMessage();

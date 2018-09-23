@@ -12,13 +12,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  ************************************************************************/
+
 #ifndef __VOGRO_TEST_CLIENT_HPP__
 #define __VOGRO_TEST_CLIENT_HPP__
 
 #include "request.hpp"
+#include <boost/asio.hpp>
 #include <iostream>
 #include <string>
-#include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
 
@@ -29,12 +30,13 @@ private:
     std::string serverIP;
     std::string serverPort;
     boost::asio::io_service ios;
-    std::shared_ptr<boost::asio::ip::tcp::socket> socket = 
-        std::make_shared<boost::asio::ip::tcp::socket>(ios);
-   
+    std::shared_ptr<boost::asio::ip::tcp::socket> socket = std::make_shared<boost::asio::ip::tcp::socket>(ios);
 
 public:
-    VogroTestClient(const std::string& ip, const::std::string& port):serverIP(ip),serverPort(port){
+    VogroTestClient(const std::string& ip, const ::std::string& port)
+        : serverIP(ip)
+        , serverPort(port)
+    {
 
         boost::asio::ip::tcp::resolver::query resolver_query(this->serverIP, this->serverPort,
             boost::asio::ip::tcp::resolver::query::numeric_service);
@@ -44,34 +46,35 @@ public:
         try {
             boost::asio::ip::tcp::resolver::iterator it = resolver.resolve(resolver_query);
             boost::asio::connect(*socket, it);
-        }catch (boost::system::system_error &e) {
-            std::cout<<e.what()<<std::endl;
+        } catch (boost::system::system_error& e) {
+            std::cout << e.what() << std::endl;
         }
-
     }
 
-    Request& Get(std::string path){
-        auto p = std::make_shared<Request>("GET",path, this->socket,this->serverIP,this->serverPort);
+    Request& Get(const std::string& path)
+    {
+        auto p = std::make_shared<Request>("GET", path, this->socket, this->serverIP, this->serverPort);
         return *p;
     }
 
-    Request& Post(std::string path){
-        auto p = std::make_shared<Request>("POST",path,this->socket,this->serverIP,this->serverPort);
+    Request& Post(const std::string& path)
+    {
+        auto p = std::make_shared<Request>("POST", path, this->socket, this->serverIP, this->serverPort);
         return *p;
     }
 
-    Request& Put(std::string path){
-        auto p = std::make_shared<Request>("PUT",path,this->socket, this->serverIP, this->serverPort);
-        return *p;
-    }
-    
-    Request& Delete(std::string path){
-        auto p = std::make_shared<Request>("DELETE",path,this->socket, this->serverIP, this->serverPort);
+    Request& Put(const std::string& path)
+    {
+        auto p = std::make_shared<Request>("PUT", path, this->socket, this->serverIP, this->serverPort);
         return *p;
     }
 
-
+    Request& Delete(const std::string& path)
+    {
+        auto p = std::make_shared<Request>("DELETE", path, this->socket, this->serverIP, this->serverPort);
+        return *p;
+    }
 };
-}  //namespace vogro
+} //namespace vogro
 
 #endif
