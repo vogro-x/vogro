@@ -25,7 +25,7 @@
 #include "common.hpp"
 #include "status.hpp"
 #include "json.hpp"
-#include "template_engine.h"
+#include "template_engine.hpp"
 
 namespace vogro {
 
