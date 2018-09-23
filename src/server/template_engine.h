@@ -153,7 +153,7 @@ namespace vtpl {
 
     private:
         template <typename T>
-        auto GetData(const T &data, size_t index, const vector<string> &keys) {
+        auto GetData(const T &data, size_t index, const vector<string> &keys) -> decltype(data[keys[index]]) {
             if (keys.size() - 1 == index) {
                 return data[keys[index]];
             } else {
@@ -163,7 +163,7 @@ namespace vtpl {
 
     public:
 
-        auto Get(const string &key) {
+        auto Get(const string &key) ->decltype(GetData((*this), 0, split(key, "."))) {
             auto keys = split(key, ".");
             return GetData((*this), 0, keys);
         }
