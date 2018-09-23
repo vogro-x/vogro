@@ -43,8 +43,8 @@ private:
     std::map<std::string, std::string> queryParams;
     std::map<std::string, std::string> pathParams;
     
-    std::stringstream body;
-
+    // std::stringstream body_stream;
+    std::string body;
     std::shared_ptr<boost::asio::ip::tcp::socket>& socket;
 
     std::string getFinalPath()
@@ -131,13 +131,10 @@ public:
         return *this;
     }
 
-    Request& withBody(const std::string& bd)
+    Request& withJSON(const std::string& bd)
     {
-        this->body << bd;
-        this->body.seekp(0, std::ios::end);
-        auto length = this->body.tellp();
-        this->body.seekg(0, std::ios::beg);
-        this->headers["Content-Length"] = std::to_string(length);
+        this->body = bd;       
+        this->headers["Content-Type"] = "application/json";
         return *this;
     }
 
@@ -163,8 +160,10 @@ public:
             ss << h.first << ": " << h.second << "\r\n";
         }
 
+       
+        ss<<"Content-Length: "<<this->body.length()<<"\r\n";
         ss << "\r\n";
-        ss << this->body.str();
+        ss << this->body;
         return ss.str();
     }
 
@@ -198,10 +197,10 @@ public:
             resHeaders[parse_result.first] = parse_result.second;
         }
 
-        auto res = std::make_shared<Response>(resHeaders,this->method, this->final_path);
-        res->code = status_code;
+        // auto res = std::make_shared<Response>(resHeaders,this->method, this->final_path);
+        // res->code = status_code;
         
-        auto bodyLength = (res->headers.find("Content-Length") == res->headers.end()) ? "0" : res->headers["Content-Length"];
+        auto bodyLength = (resHeaders.find("Content-Length") == resHeaders.end()) ? "0" : resHeaders["Content-Length"];
         auto Length = std::stoull(bodyLength);
         auto additional_bytes_num = total - bytes_transfered;
         auto remain = Length - additional_bytes_num;
@@ -210,12 +209,13 @@ public:
             boost::system::error_code error;
             boost::asio::read(*socket, response_buffer, boost::asio::transfer_exactly(remain), error);
         }
+        
         std::stringstream mybody;
         mybody << &response_buffer;
-
-        res->body = mybody.str();
-        // std::cout << res->body << std::endl
-                //   << std::endl;
+        std::string bodyString = mybody.str();
+        
+        auto res = std::make_shared<Response>(bodyString,resHeaders,this->method, this->final_path);
+        res->code = status_code;
         return *res;
     }
 };

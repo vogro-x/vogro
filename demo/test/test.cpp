@@ -5,9 +5,9 @@
 int main(void) {
     vogro::VogroTestClient client("127.0.0.1", "8080");
 
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 100; i++) {
 
-        client.Get("/").Expect().Body().Contains("Page");
+        client.Get("/").Expect().Body().Contains("Index");
 
         client.Get("/username/{name}").withPath("name","Andrewpqc").Expect().
             Body().Contains("Andrewpqc");
@@ -15,7 +15,7 @@ int main(void) {
         client.Get("/course/{coursename}/user/{id}/").withPath("coursename","A1310B").
             withPath("id","123").withQuery("nn","123").Expect().Body().Contains("A1310B");
 
-        client.Get("/user/get/").Expect().Status(200).Header().Contains("Date","122335");
+        client.Get("/user/get/").Expect().Status(200).Body().Contains("hello");
 
         client.Post("/user/post/").Expect().Status(200).Body().Contains("post");
 
@@ -26,6 +26,8 @@ int main(void) {
         client.Get("/auth/").withBasicAuth("andrew", "12345").Expect().Body().Contains("andrew");
 
         client.Get("/json/").Expect().Body().Contains("\"name\":\"andrew\"");
+
+        client.Post("/a/post/").withJSON("{\"name\":\"Andrewpqc\"}").Expect().Body().Contains("Andrewpqc");
 
     }
     return 0;

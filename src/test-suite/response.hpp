@@ -91,12 +91,12 @@ public:
 
 class BodyExpectation {
 private:
-    const std::string body;
+    const std::string& body;
     const std::string method_; 
     const std::string& path_;
 
 public:
-    BodyExpectation(const std::string bd,const std::string& method, const std::string& path)
+    BodyExpectation(const std::string & bd,const std::string& method, const std::string& path)
         : body(bd)
         , method_(method)
         , path_(path)
@@ -150,15 +150,16 @@ private:
     const std::string& req_path_;
     int code;
     std::map<std::string, std::string>& headers;
-    std::string body;
+    const std::string& body;
 
 public:
     friend class Request;
 
-    Response(std::map<std::string, std::string>& hdrs, const std::string & req_method,const std::string & req_path)
+    Response(const std::string& bd,std::map<std::string, std::string>& hdrs, const std::string & req_method,const std::string & req_path)
         : req_method_(req_method)
         , req_path_(req_path)
         , headers(hdrs)
+        , body(bd)
         {
         }
 
