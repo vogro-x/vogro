@@ -12,6 +12,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  ************************************************************************/
+
 #ifndef __VOGRO_TEST_REQUEST_HPP__
 #define __VOGRO_TEST_REQUEST_HPP__
 
@@ -27,10 +28,11 @@
 using boost::asio::ip::tcp;
 
 namespace vogro {
+
 class Request {
 private:
     std::string method;
-    std::string path;
+    std::string pathTpl;
     std::map<std::string, std::string> queryParams;
     std::vector<std::pair<std::string, std::string>> headers;
     std::map<std::string, std::string> pathParams;
@@ -41,7 +43,7 @@ private:
     std::string getFinalPath()
     {
         std::stringstream pathStream;
-        auto realPath = get_real_path(this->path, this->pathParams);
+        auto realPath = get_real_path(this->pathTpl, this->pathParams);
         pathStream << realPath;
 
         if (this->queryParams.size() != 0) {
@@ -61,7 +63,7 @@ private:
         const std::map<std::string, std::string>& pathParam)
     {
         auto length = originPath.length();
-        std::string realPath;
+        std::string realPath="";
         for (int i = 0; i < length; i++) {
             if (originPath[i] == '{') {
                 std::string key = "";
@@ -87,17 +89,22 @@ private:
 
         if (realPath.back() != '/')
             realPath += '/';
-
         return realPath;
     }
 
 public:
-    Request(const std::string& mtd, const std::string p,
-        std::shared_ptr<boost::asio::ip::tcp::socket>& sock)
-        : method(mtd)
-        , path(p)
+    Request(const std::string& mthd, const std::string& p,
+        std::shared_ptr<boost::asio::ip::tcp::socket>& sock, 
+        const std::string &serverIP,const std::string& serverPort)
+        : method(mthd)
+        , pathTpl(p)
         , socket(sock)
     {
+        auto host_header = std::make_pair("Host",serverIP+":"+serverPort);
+        this->headers.push_back(host_header); 
+    }
+    std::string getPathTpl(){
+        return this->pathTpl;
     }
 
     Request& withQuery(const std::string& key, const std::string& val)
@@ -122,6 +129,10 @@ public:
     Request& withBody(const std::string& bd)
     {
         this->body << bd;
+        this->body.seekp(0, std::ios::end);
+        auto length = this->body.tellp();
+        this->body.seekg(0, std::ios::beg);
+        this->withHeader("Content-Length",std::to_string(length));
         return *this;
     }
 
@@ -133,7 +144,7 @@ public:
     }
 
     std::string makeRequestMessage()
-    {
+    {   
         std::stringstream ss;
         ss << this->method << " " << this->getFinalPath() << " HTTP/1.1\r\n";
         for (auto h : this->headers) {
