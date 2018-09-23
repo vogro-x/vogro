@@ -26,11 +26,15 @@ namespace vogro {
 
 class HeaderExpectation {
 private:
+    const std::string method_;
+    const std::string& path_;
     std::map<std::string, std::string> headers;
 
 public:
-    HeaderExpectation(const std::map<std::string, std::string>& hdrs)
+    HeaderExpectation(const std::map<std::string, std::string>& hdrs,const std::string& method, const std::string& path)
         : headers(hdrs)
+        , method_(method)
+        , path_(path)
     {
     }
 
@@ -42,14 +46,20 @@ public:
     HeaderExpectation& Contains(const std::string& header_key, const std::string& header_val)
     {
         auto h = this->headers.find(header_key);
-        assert(h != this->headers.end() && h->second == header_val);
+        if(!(h != this->headers.end() && h->second == header_val)){
+            std::cout<<"["<<this->method_<<"] "<<this->path_<<" Failed"<<std::endl;
+            exit(1);
+        }
         return *this;
     }
 
     HeaderExpectation& NotContains(const std::string& header_key, const std::string& header_val)
     {
         auto h = this->headers.find(header_key);
-        assert(h == this->headers.end() || h->second != header_val);
+         if(!(h == this->headers.end() || h->second != header_val)){
+            std::cout<<"["<<this->method_<<"] "<<this->path_<<" Failed"<<std::endl;
+            exit(1);
+        }
         return *this;
     }
 };
@@ -57,10 +67,14 @@ public:
 class BodyExpectation {
 private:
     std::string body;
+    const std::string method_;
+    const std::string& path_;
 
 public:
-    BodyExpectation(const std::string bd)
+    BodyExpectation(const std::string bd,const std::string& method, const std::string& path)
         : body(bd)
+        , method_(method)
+        , path_(path)
     {
     }
 
@@ -71,32 +85,50 @@ public:
     BodyExpectation& Contains(const std::string& x)
     {
         size_t found = this->body.find(x);
-        assert(found != std::string::npos);
+        // assert(found != std::string::npos);
+        if(found == std::string::npos){
+            std::cout<<"["<<this->method_<<"] "<<this->path_<<" Failed"<<std::endl;
+            exit(1);
+        }
         return *this;
     }
 
     BodyExpectation& NotContains(const std::string& x)
     {
         std::size_t found = this->body.find(x);
-        assert(found == std::string::npos);
+        // assert(found == std::string::npos);
+         if(found != std::string::npos){
+            std::cout<<"["<<this->method_<<"] "<<this->path_<<" Failed"<<std::endl;
+            exit(1);
+        }
         return *this;
     }
 
     BodyExpectation& Equal(const std::string& bd)
     {
-        assert(this->body == bd);
+        // assert(this->body == bd);
+        if(this->body != bd){
+            std::cout<<"["<<this->method_<<"] "<<this->path_<<" Failed"<<std::endl;
+            exit(1);
+        }
         return *this;
     }
 
     BodyExpectation& NotEqual(const std::string& bd)
     {
-        assert(this->body != bd);
+        // assert(this->body != bd);
+        if(this->body == bd){
+            std::cout<<"["<<this->method_<<"] "<<this->path_<<" Failed"<<std::endl;
+            exit(1);
+        }
         return *this;
     }
 };
 
 class Response {
 private:
+    const std::string& req_method_;
+    const std::string& req_path_;
     int code;
     std::map<std::string, std::string> headers;
     std::string body;
@@ -104,7 +136,11 @@ private:
 public:
     friend class Request;
 
-    Response() {}
+    Response(const std::string & req_method,const std::string & req_path)
+        : req_method_(req_method)
+        , req_path_(req_path)
+        {
+        }
 
     Response& Status(int c)
     {
@@ -114,13 +150,13 @@ public:
 
     HeaderExpectation& Header()
     {
-        auto hp = std::make_shared<HeaderExpectation>(this->headers);
+        auto hp = std::make_shared<HeaderExpectation>(this->headers,this->req_method_,this->req_path_);
         return *hp;
     }
 
     BodyExpectation& Body()
     {
-        auto bd = std::make_shared<BodyExpectation>(this->body);
+        auto bd = std::make_shared<BodyExpectation>(this->body,this->req_method_,this->req_path_);
         return *bd;
     }
 };

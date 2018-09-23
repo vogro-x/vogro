@@ -13,7 +13,7 @@ int main(void) {
             Body().Contains("Andrewpqc");
 
         client.Get("/course/{coursename}/user/{id}/").withPath("coursename","A1310B").
-            withPath("id","123").Expect().Body().Contains("A1310B");
+            withPath("id","123").withQuery("nn","123").Expect().Body().Contains("A1310B");
 
         client.Get("/user/get/").Expect().Status(200).Body().Contains("hello");
 

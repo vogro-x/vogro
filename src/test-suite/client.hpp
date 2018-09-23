@@ -51,6 +51,10 @@ public:
         }
     }
 
+    ~VogroTestClient(){
+        std::cout<<"Test OK"<<std::endl;
+    }
+
     Request& Get(const std::string& path)
     {
         auto p = std::make_shared<Request>("GET", path, this->socket, this->serverIP, this->serverPort);

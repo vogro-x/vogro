@@ -35,6 +35,7 @@ private:
 
     const std::string method;
     const std::string& pathTpl; // MUST reference 
+    std::string final_path;
     
     
     std::map<std::string, std::string> headers;
@@ -61,6 +62,7 @@ private:
         auto finalPath = pathStream.str();
         if (finalPath.back() == '&')
             finalPath.pop_back();
+
         return finalPath;
     }
 
@@ -150,9 +152,11 @@ public:
         auto host_str = this->ip + ":" + this->port;
         this->headers["Host"] = host_str;
 
-        std::cout<<"pp:"<<this->pathTpl<<std::endl;
+        auto fp = this->getFinalPath();
+        this->final_path = fp;
+
         std::stringstream ss;
-        ss << this->method << " " << this->getFinalPath() << " HTTP/1.1\r\n";
+        ss << this->method << " " << fp << " HTTP/1.1\r\n";
 
         for (auto h : this->headers) {
             ss << h.first << ": " << h.second << "\r\n";
@@ -174,8 +178,7 @@ public:
         boost::asio::streambuf response_buffer;
         boost::asio::read_until(*socket, response_buffer, "\r\n");
         std::istream response_stream(&response_buffer);
-
-        auto res = std::make_shared<Response>();
+        auto res = std::make_shared<Response>(this->method, this->final_path);
 
         std::string http_version;
         int status_code;
@@ -200,7 +203,7 @@ public:
         auto Length = std::stoull(bodyLength);
         auto additional_bytes_num = total - bytes_transfered;
         auto remain = Length - additional_bytes_num;
-        std::cout << remain << std::endl;
+        // std::cout << remain << std::endl;
         if (remain > 0) {
             boost::system::error_code error;
             boost::asio::read(*socket, response_buffer, boost::asio::transfer_exactly(remain), error);
@@ -209,8 +212,8 @@ public:
         mybody << &response_buffer;
 
         res->body = mybody.str();
-        std::cout << res->body << std::endl
-                  << std::endl;
+        // std::cout << res->body << std::endl
+                //   << std::endl;
         return *res;
     }
 };
