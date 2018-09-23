@@ -15,7 +15,7 @@ int main(void) {
         client.Get("/course/{coursename}/user/{id}/").withPath("coursename","A1310B").
             withPath("id","123").withQuery("nn","123").Expect().Body().Contains("A1310B");
 
-        client.Get("/user/get/").Expect().Status(200).Body().Contains("hello");
+        client.Get("/user/get/").Expect().Status(200).Header().Contains("Date","122335");
 
         client.Post("/user/post/").Expect().Status(200).Body().Contains("post");
 

@@ -22,13 +22,31 @@
 #include <sstream>
 #include <string>
 
+#include "../utils.hpp"
+
+void TestFailedReportor(const std::string method, const std::string path, 
+                const std::string & entity, const std::string & action,
+                const std::string & expect, const std::string & got){
+
+std::cout<<"["<<method<<"] "<<path<<INITCOLOR(RED_COLOR)<<" Failed"<<INITCOLOR(ZERO_COLOR)<<std::endl<<std::endl;
+std::cout<<"expect "<<entity<<" "<<action<<" :"<<std::endl;
+std::cout<<"    "<<expect<<std::endl;
+std::cout<<"but got :"<<std::endl;
+if(got == "") std::cout<<"    not found"<<std::endl;
+else std::cout<<"    "<<got<<std::endl;
+
+std::cout<<std::endl;
+exit(1);
+}
+
+
 namespace vogro {
 
 class HeaderExpectation {
 private:
     const std::string method_;
     const std::string& path_;
-    std::map<std::string, std::string> headers;
+    const std::map<std::string, std::string>& headers;
 
 public:
     HeaderExpectation(const std::map<std::string, std::string>& hdrs,const std::string& method, const std::string& path)
@@ -44,11 +62,16 @@ public:
     }
 
     HeaderExpectation& Contains(const std::string& header_key, const std::string& header_val)
-    {
+    {   
         auto h = this->headers.find(header_key);
-        if(!(h != this->headers.end() && h->second == header_val)){
-            std::cout<<"["<<this->method_<<"] "<<this->path_<<" Failed"<<std::endl;
-            exit(1);
+        auto expect = header_key + ": "+ header_val;
+        if(h==this->headers.end()){
+            TestFailedReportor(this->method_,this->path_,"Header","contains",expect,"");
+        }
+
+        if(h->second != header_val){
+            auto got = h->first+": "+ h->second;
+            TestFailedReportor(this->method_,this->path_,"Header","contains",expect,got);
         }
         return *this;
     }
@@ -56,18 +79,20 @@ public:
     HeaderExpectation& NotContains(const std::string& header_key, const std::string& header_val)
     {
         auto h = this->headers.find(header_key);
-         if(!(h == this->headers.end() || h->second != header_val)){
-            std::cout<<"["<<this->method_<<"] "<<this->path_<<" Failed"<<std::endl;
-            exit(1);
+        auto expect = header_key + ": "+ header_val;
+        if(h != this->headers.end() && h->second == header_val){
+            auto got = h->first + ": " + h->second;
+            TestFailedReportor(this->method_,this->path_,"Header","not contain",expect,got);
         }
+        
         return *this;
     }
 };
 
 class BodyExpectation {
 private:
-    std::string body;
-    const std::string method_;
+    const std::string body;
+    const std::string method_; 
     const std::string& path_;
 
 public:
@@ -85,10 +110,8 @@ public:
     BodyExpectation& Contains(const std::string& x)
     {
         size_t found = this->body.find(x);
-        // assert(found != std::string::npos);
         if(found == std::string::npos){
-            std::cout<<"["<<this->method_<<"] "<<this->path_<<" Failed"<<std::endl;
-            exit(1);
+            TestFailedReportor(this->method_,this->path_,"Body","contains",x,this->body);
         }
         return *this;
     }
@@ -96,10 +119,8 @@ public:
     BodyExpectation& NotContains(const std::string& x)
     {
         std::size_t found = this->body.find(x);
-        // assert(found == std::string::npos);
          if(found != std::string::npos){
-            std::cout<<"["<<this->method_<<"] "<<this->path_<<" Failed"<<std::endl;
-            exit(1);
+            TestFailedReportor(this->method_,this->path_,"Body","not contain",x,this->body);
         }
         return *this;
     }
@@ -108,8 +129,7 @@ public:
     {
         // assert(this->body == bd);
         if(this->body != bd){
-            std::cout<<"["<<this->method_<<"] "<<this->path_<<" Failed"<<std::endl;
-            exit(1);
+            TestFailedReportor(this->method_,this->path_,"Body","equal",bd,this->body);
         }
         return *this;
     }
@@ -118,8 +138,7 @@ public:
     {
         // assert(this->body != bd);
         if(this->body == bd){
-            std::cout<<"["<<this->method_<<"] "<<this->path_<<" Failed"<<std::endl;
-            exit(1);
+            TestFailedReportor(this->method_,this->path_,"Body","not equal",bd,this->body);
         }
         return *this;
     }
@@ -130,15 +149,16 @@ private:
     const std::string& req_method_;
     const std::string& req_path_;
     int code;
-    std::map<std::string, std::string> headers;
+    std::map<std::string, std::string>& headers;
     std::string body;
 
 public:
     friend class Request;
 
-    Response(const std::string & req_method,const std::string & req_path)
+    Response(std::map<std::string, std::string>& hdrs, const std::string & req_method,const std::string & req_path)
         : req_method_(req_method)
         , req_path_(req_path)
+        , headers(hdrs)
         {
         }
 

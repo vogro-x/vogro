@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include <vector>
 
-#define INITCOLOR(color)  std::string("\033[") + std::string(color) + std::string("m")
+#define INITCOLOR(color)  std::string("\033[1;") + std::string(color) + std::string("m")
 #define RED_COLOR "31"
 #define GREEN_COLOR "32"
 #define YELLOW_COLOR "33"

@@ -39,6 +39,7 @@ private:
     
     
     std::map<std::string, std::string> headers;
+    std::map<std::string, std::string> resHeaders;
     std::map<std::string, std::string> queryParams;
     std::map<std::string, std::string> pathParams;
     
@@ -178,7 +179,6 @@ public:
         boost::asio::streambuf response_buffer;
         boost::asio::read_until(*socket, response_buffer, "\r\n");
         std::istream response_stream(&response_buffer);
-        auto res = std::make_shared<Response>(this->method, this->final_path);
 
         std::string http_version;
         int status_code;
@@ -187,7 +187,6 @@ public:
         response_stream >> http_version;
         response_stream >> status_code;
         std::getline(response_stream, status_message);
-        res->code = status_code;
 
         auto bytes_transfered = boost::asio::read_until(*socket, response_buffer, "\r\n\r\n");
 
@@ -196,9 +195,12 @@ public:
         std::string header;
         while (std::getline(response_stream, header) && header != "\r") {
             auto parse_result = parse_header(header);
-            res->headers[parse_result.first] = parse_result.second;
+            resHeaders[parse_result.first] = parse_result.second;
         }
 
+        auto res = std::make_shared<Response>(resHeaders,this->method, this->final_path);
+        res->code = status_code;
+        
         auto bodyLength = (res->headers.find("Content-Length") == res->headers.end()) ? "0" : res->headers["Content-Length"];
         auto Length = std::stoull(bodyLength);
         auto additional_bytes_num = total - bytes_transfered;

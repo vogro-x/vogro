@@ -17,6 +17,7 @@
 #define __VOGRO_TEST_CLIENT_HPP__
 
 #include "request.hpp"
+#include "../utils.hpp"
 #include <boost/asio.hpp>
 #include <iostream>
 #include <string>
@@ -52,7 +53,8 @@ public:
     }
 
     ~VogroTestClient(){
-        std::cout<<"Test OK"<<std::endl;
+        // printf("\033[1;32mHello,world\033[0m\n");
+        std::cout<<INITCOLOR(BLUE_COLOR)<<"Successed"<<INITCOLOR(ZERO_COLOR)<<std::endl;
     }
 
     Request& Get(const std::string& path)
