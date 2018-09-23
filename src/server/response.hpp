@@ -25,6 +25,7 @@
 #include "common.hpp"
 #include "status.hpp"
 #include "json.hpp"
+#include "template_engine.h"
 
 namespace vogro {
 
@@ -150,6 +151,12 @@ public:
     }
     
     void addBody(std::string cnt) { this->body << cnt; }
+
+    void renderTemplate(const std::string& html, const vtpl::Environment& env) {
+        auto rendred = vtpl::TemplateRender(html,env);
+        // this->addHeader("Content-Type")
+        this->addBody(rendred);
+    }
 
     std::stringstream& getResponseBodyStrem() { return body; }
 

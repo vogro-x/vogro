@@ -4,6 +4,7 @@
 #include "../src/server/http.hpp"
 #include "../src/server/json.hpp" // for start http server
 // #include "https.hpp" //for start https server
+#include "../src/server/template_engine.h"
 
 int main()
 {
@@ -110,6 +111,13 @@ int main()
         j["id"] =1;
         j["name"] = "andrew";
         ctx.response->writeJSON(j);
+    });
+
+    server.Get("/tpl/{str:name}/",[](vogro::Context& ctx){
+        auto name = ctx.request->getPathParam("name");
+        vtpl::Environment env;
+        env["name"] = name;
+        ctx.response->renderTemplate("<h1>Hello, {{ name }} </h1>",env);
     });
     
     server.runServer();
