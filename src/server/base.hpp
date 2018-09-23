@@ -29,9 +29,9 @@
 #include <functional>
 
 #include "../utils.hpp"
-#include "../logger.hpp"
-#include "../request.hpp"
-#include "../response.hpp"
+#include "logger.hpp"
+#include "request.hpp"
+#include "response.hpp"
 #include "context.hpp"
 #include "static.hpp"
 #include "default_error_handler.hpp"

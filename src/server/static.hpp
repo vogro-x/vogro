@@ -22,9 +22,9 @@
 #ifndef __STATIC_SERVER_HPP__
 #define __STATIC_SERVER_HPP__
 #include "mime.hpp"
-#include "../request.hpp"
-#include "../response.hpp"
-#include "../status.hpp"
+#include "request.hpp"
+#include "response.hpp"
+#include "status.hpp"
 #include "../utils.hpp"
 
 #include <boost/asio.hpp>

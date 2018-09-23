@@ -18,7 +18,7 @@
 
 #include <iostream>
 #include "base.hpp"
-#include "../status.hpp"
+#include "status.hpp"
 
 
 namespace vogro {
@@ -34,7 +34,6 @@ class Server : public ServerBase<HTTP> {
 
    private:
     void accept() {
-        std::cout<<"accept a new connection..."<<std::endl;
         auto socket = std::make_shared<HTTP>(io_svc);
         acceptor.async_accept(*socket, [this, socket](const boost::system::error_code& ec) {
                 accept();  //递归调用accept

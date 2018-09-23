@@ -20,8 +20,7 @@
 #include <iostream>
 
 void printLogo(unsigned short port, const std::string & version){
-    INITCOLOR(BLUE_COLOR);
-        std::cout<<std::endl<<std::endl;
+        std::cout<<INITCOLOR(YELLOW_COLOR)<<std::endl<<std::endl;
         std::cout<<"        __      __                                                                "<<std::endl;
         std::cout<<"        \\ \\    / /                                                              "<<std::endl;
         std::cout<<"         \\ \\  / /__   __ _ _ __ ___      Vogro Version "<<version               <<std::endl;
@@ -30,8 +29,7 @@ void printLogo(unsigned short port, const std::string & version){
         std::cout<<"            \\/ \\___/ \\__, |_|  \\___/                                          "<<std::endl;
         std::cout<<"                      __/ |                                                       "<<std::endl;
         std::cout<<"                     |___/                                                        "<<std::endl;
-        std::cout<<std::endl<<std::endl;
-    
+        std::cout<<INITCOLOR(ZERO_COLOR)<<std::endl<<std::endl;   
 }
 
 
