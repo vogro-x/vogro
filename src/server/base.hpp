@@ -185,6 +185,7 @@ namespace vogro {
             [this, socket, read_buffer](const boost::system::error_code &ec,
                                         size_t bytes_transferred) {
                 if (!ec) {
+                    size_t total = read_buffer->size();
 
                     std::istream stream(read_buffer.get());
 
@@ -209,7 +210,6 @@ namespace vogro {
                     //     respond(socket, request);
                     // }
 
-                    size_t total = read_buffer->size();
                     size_t num_additional_bytes = total - bytes_transferred;
                     if (request->getHeader("Content-Length") != "") {
                         auto remainBodyLength = std::stoull(request->getHeader("Content-Length")) - num_additional_bytes;
