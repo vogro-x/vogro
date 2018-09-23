@@ -19,7 +19,9 @@
 #include <iostream>
 #include <string>
 #include <boost/asio.hpp>
+
 using boost::asio::ip::tcp;
+
 namespace vogro {
 
 class VogroTestClient {
@@ -49,22 +51,22 @@ public:
     }
 
     Request& Get(std::string path){
-        auto p = std::make_shared<Request>("GET",path, this->socket);
+        auto p = std::make_shared<Request>("GET",path, this->socket,this->serverIP,this->serverPort);
         return *p;
     }
 
     Request& POST(std::string path){
-        auto p = std::make_shared<Request>("POST",path,this->socket);
+        auto p = std::make_shared<Request>("POST",path,this->socket,this->serverIP,this->serverPort);
         return *p;
     }
 
     Request& PUT(std::string path){
-        auto p = std::make_shared<Request>("PUT",path,this->socket);
+        auto p = std::make_shared<Request>("PUT",path,this->socket, this->serverIP, this->serverPort);
         return *p;
     }
     
     Request& DELETE(std::string path){
-        auto p = std::make_shared<Request>("DELETE",path,this->socket);
+        auto p = std::make_shared<Request>("DELETE",path,this->socket, this->serverIP, this->serverPort);
         return *p;
     }
 
