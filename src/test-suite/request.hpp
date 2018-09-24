@@ -150,11 +150,11 @@ public:
         auto host_str = this->ip + ":" + this->port;
         this->headers["Host"] = host_str;
 
-        auto fp = this->getFinalPath();
+        auto fp =  this->getFinalPath();
         this->final_path = fp;
 
         std::stringstream ss;
-        ss << this->method << " " << fp << " HTTP/1.1\r\n";
+        ss << this->method << " " << url_encode(fp) << " HTTP/1.1\r\n";
 
         for (auto h : this->headers) {
             ss << h.first << ": " << h.second << "\r\n";

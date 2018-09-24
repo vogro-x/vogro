@@ -12,6 +12,9 @@ int main(void) {
         client.Get("/username/{name}").withPath("name","Andrewpqc").Expect().
             Body().Contains("Andrewpqc");
 
+        client.Get("/username/{name}").withPath("name","阿超").Expect().
+            Body().Contains("阿超");
+
         client.Get("/course/{coursename}/user/{id}/").withPath("coursename","A1310B").
             withPath("id","123").withQuery("nn","123").Expect().Body().Contains("A1310B");
 
