@@ -15,12 +15,15 @@
 
 #ifndef __VOGRO_UTILS_HPP__
 #define __VOGRO_UTILS_HPP__
+
 #include <algorithm>
 #include <map>
 #include <sstream>
 #include <string>
 #include <unistd.h>
 #include <vector>
+#include <locale>
+#include <codecvt>
 
 #define INITCOLOR(color)  std::string("\033[1;") + std::string(color) + std::string("m")
 #define RED_COLOR "31"
@@ -326,43 +329,53 @@ std::string base64_decode(std::string const& encoded_string) {
 }
 
 
-bool url_decode(const std::string& in, std::string& out)
-{
-  out.clear();
-  out.reserve(in.size());
-  for (std::size_t i = 0; i < in.size(); ++i)
-  {
-    if (in[i] == '%')
-    {
-      if (i + 3 <= in.size())
-      {
-        int value = 0;
-        std::istringstream is(in.substr(i + 1, 2));
-        if (is >> std::hex >> value)
-        {
-          out += static_cast<char>(value);
-          i += 2;
-        }
+inline static std::string url_encode(const std::string &value) noexcept {
+    static auto hex_chars = "0123456789ABCDEF";
+
+    std::string result;
+    result.reserve(value.size()); // Minimum size of result
+
+    for (auto &chr : value) {
+        if (!((chr >= '0' && chr <= '9') || (chr >= 'A' && chr <= 'Z') || (chr >= 'a' && chr <= 'z') || chr == '-' || chr == '.' || chr == '_' || chr == '~'))
+            result += std::string("%") + hex_chars[static_cast<unsigned char>(chr) >> 4] + hex_chars[static_cast<unsigned char>(chr) & 15];
         else
-        {
-          return false;
+            result += chr;
+    }
+
+    return result;
+}
+
+inline static std::string url_decode(const std::string &value) noexcept {
+    std::string result;
+    result.reserve(value.size() / 3 + (value.size() % 3)); // Minimum size of result
+
+    for (std::size_t i = 0; i < value.size(); ++i) {
+        auto &chr = value[i];
+        if (chr == '%' && i + 2 < value.size()) {
+            auto hex = value.substr(i + 1, 2);
+            auto decoded_chr = static_cast<char>(std::strtol(hex.c_str(), nullptr, 16));
+            result += decoded_chr;
+            i += 2;
         }
-      }
-      else
-      {
-        return false;
-      }
+        else if (chr == '+')
+            result += ' ';
+        else
+            result += chr;
     }
-    else if (in[i] == '+')
-    {
-      out += ' ';
-    }
-    else
-    {
-      out += in[i];
-    }
-  }
-  return true;
+
+    return result;
+}
+
+inline static  std::string u8wstring_to_string(const std::wstring& wstr)
+{
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+    return conv.to_bytes(wstr);
+}
+
+inline static std::wstring u8string_to_wstring(const std::string& str)
+{
+    std::wstring_convert<std::codecvt_utf8<wchar_t> > conv;
+    return conv.from_bytes(str);
 }
 
 #endif
