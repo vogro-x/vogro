@@ -58,6 +58,58 @@ std::string rtrim(std::string str)
 
 std::string trim(std::string str) { return rtrim(ltrim(str)); }
 
+inline static std::string url_encode(const std::string &value) noexcept {
+    static auto hex_chars = "0123456789ABCDEF";
+
+    std::string result;
+    result.reserve(value.size()); // Minimum size of result
+
+    for (auto &chr : value) {
+        if (!((chr >= '0' && chr <= '9') || (chr >= 'A' && chr <= 'Z') || (chr >= 'a' && chr <= 'z') || chr == '-' || chr == '.' || chr == '_' || chr == '~'))
+            result += std::string("%") + hex_chars[static_cast<unsigned char>(chr) >> 4] + hex_chars[static_cast<unsigned char>(chr) & 15];
+        else
+            result += chr;
+    }
+
+    return result;
+}
+
+inline static std::string url_decode(const std::string &value) noexcept {
+    std::string result;
+    result.reserve(value.size() / 3 + (value.size() % 3)); // Minimum size of result
+
+    for (std::size_t i = 0; i < value.size(); ++i) {
+        auto &chr = value[i];
+        if (chr == '%' && i + 2 < value.size()) {
+            auto hex = value.substr(i + 1, 2);
+            auto decoded_chr = static_cast<char>(std::strtol(hex.c_str(), nullptr, 16));
+            result += decoded_chr;
+            i += 2;
+        }
+        else if (chr == '+')
+            result += ' ';
+        else
+            result += chr;
+    }
+
+    return result;
+}
+
+inline static  std::string u8wstring_to_string(const std::wstring& wstr)
+{
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+    return conv.to_bytes(wstr);
+}
+
+inline static std::wstring u8string_to_wstring(const std::string& str)
+{
+    std::wstring_convert<std::codecvt_utf8<wchar_t> > conv;
+    return conv.from_bytes(str);
+}
+
+
+
+
 std::pair<bool, bool> urlMatch(std::string requestUrl, std::string handlerUrl,
     std::map<std::string, std::string>& storeMap)
 {
@@ -75,7 +127,8 @@ std::pair<bool, bool> urlMatch(std::string requestUrl, std::string handlerUrl,
     auto requestUrlLength = requestUrl.length();
     auto max_length = (handlerUrlLength > requestUrlLength) ? handlerUrlLength
                                                             : requestUrlLength;
-    for (auto i = 0, j = 0; (i < max_length) && (j < max_length); ++i, ++j) {
+    size_t i = 0, j = 0; 
+    for ( ; (i < max_length) && (j < max_length); ++i, ++j) {
         if (handlerUrl[i] == '{') {
             auto tempIndex = i + 1;
             bool flag = true; // true代表当前在type域中
@@ -121,6 +174,7 @@ std::pair<bool, bool> urlMatch(std::string requestUrl, std::string handlerUrl,
             return std::make_pair(false, false);
         }
     }
+    if(j < requestUrlLength ) return std::make_pair(false,false);
     return std::make_pair(true, false);
 }
 
@@ -199,8 +253,9 @@ std::pair<std::string, std::pair<std::string, std::string>> parse_request_line(
         }
     }
 
+    
     // for return three value
-    auto url_version_pair = std::make_pair(url, version);
+    auto url_version_pair = std::make_pair(url_decode(url), version);
     return std::make_pair(method, url_version_pair);
 }
 
@@ -326,56 +381,6 @@ std::string base64_decode(std::string const& encoded_string) {
   }
 
   return ret;
-}
-
-
-inline static std::string url_encode(const std::string &value) noexcept {
-    static auto hex_chars = "0123456789ABCDEF";
-
-    std::string result;
-    result.reserve(value.size()); // Minimum size of result
-
-    for (auto &chr : value) {
-        if (!((chr >= '0' && chr <= '9') || (chr >= 'A' && chr <= 'Z') || (chr >= 'a' && chr <= 'z') || chr == '-' || chr == '.' || chr == '_' || chr == '~'))
-            result += std::string("%") + hex_chars[static_cast<unsigned char>(chr) >> 4] + hex_chars[static_cast<unsigned char>(chr) & 15];
-        else
-            result += chr;
-    }
-
-    return result;
-}
-
-inline static std::string url_decode(const std::string &value) noexcept {
-    std::string result;
-    result.reserve(value.size() / 3 + (value.size() % 3)); // Minimum size of result
-
-    for (std::size_t i = 0; i < value.size(); ++i) {
-        auto &chr = value[i];
-        if (chr == '%' && i + 2 < value.size()) {
-            auto hex = value.substr(i + 1, 2);
-            auto decoded_chr = static_cast<char>(std::strtol(hex.c_str(), nullptr, 16));
-            result += decoded_chr;
-            i += 2;
-        }
-        else if (chr == '+')
-            result += ' ';
-        else
-            result += chr;
-    }
-
-    return result;
-}
-
-inline static  std::string u8wstring_to_string(const std::wstring& wstr)
-{
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-    return conv.to_bytes(wstr);
-}
-
-inline static std::wstring u8string_to_wstring(const std::string& str)
-{
-    std::wstring_convert<std::codecvt_utf8<wchar_t> > conv;
-    return conv.from_bytes(str);
 }
 
 #endif

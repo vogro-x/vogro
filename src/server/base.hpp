@@ -190,25 +190,11 @@ namespace vogro {
                     std::istream stream(read_buffer.get());
 
                     auto request = std::make_shared<vogro::Request>();
-                    request->setRemoteIP(
-                            socket->lowest_layer().remote_endpoint().address().to_string());
-                    request->setRemotePort(
-                            socket->lowest_layer().remote_endpoint().port());
+                    
+                    request->setRemoteIP(socket->lowest_layer().remote_endpoint().address().to_string());
+                    request->setRemotePort(socket->lowest_layer().remote_endpoint().port());
 
                     *request = parse_request(stream);
-
-
-                  
-
-                    // boost::system::error_code error;
-                    // while (boost::asio::read(*socket, *read_buffer, boost::asio::transfer_at_least(1), error)){
-                    //     std::cout<<"jj"<<std::endl;
-                    // }
-                    // if (error != boost::asio::error::eof){
-                    //     throw boost::system::system_error(error);
-                    // }else{
-                    //     respond(socket, request);
-                    // }
 
                     size_t num_additional_bytes = total - bytes_transferred;
                     if (request->getHeader("Content-Length") != "") {
