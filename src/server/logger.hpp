@@ -178,7 +178,7 @@ public:
                 break;
         };
         this->print_impl(args...);
-         write_mutex.unlock();
+        write_mutex.unlock();
     }
 
     template<typename... Args>

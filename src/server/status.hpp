@@ -101,98 +101,99 @@ namespace vogro {
 #define CodeHTTPNotExtended_510 510
 #define CodeHTTPNetworkAuthenticationRequired_511 511
 
-class StatusCodeMap {
-   private:
-    StatusCodeMap() {
-        codePhrase[100] = "Continue";
-        codePhrase[101] = "Switching Protocols";
-        codePhrase[102] = "Processing";
+    class StatusCodeMap {
+    private:
+        StatusCodeMap() {
+            codePhrase[100] = "Continue";
+            codePhrase[101] = "Switching Protocols";
+            codePhrase[102] = "Processing";
 
-        codePhrase[200] = "OK";
-        codePhrase[201] = "Created";
-        codePhrase[202] = "Accepted";
-        codePhrase[203] = "Non-Authoritative Information";
-        codePhrase[204] = "No Content";
-        codePhrase[205] = "Reset Content";
-        codePhrase[206] = "Partial Content";
-        codePhrase[207] = "Multi-Status";
-        codePhrase[208] = "Already Reported";
-        codePhrase[226] = "IM Used";
+            codePhrase[200] = "OK";
+            codePhrase[201] = "Created";
+            codePhrase[202] = "Accepted";
+            codePhrase[203] = "Non-Authoritative Information";
+            codePhrase[204] = "No Content";
+            codePhrase[205] = "Reset Content";
+            codePhrase[206] = "Partial Content";
+            codePhrase[207] = "Multi-Status";
+            codePhrase[208] = "Already Reported";
+            codePhrase[226] = "IM Used";
 
-        codePhrase[300] = "Multiple Choices";
-        codePhrase[301] = "Moved Permanently";
-        codePhrase[302] = "Found";
-        codePhrase[303] = "See Other";
-        codePhrase[304] = "Not Modified";
-        codePhrase[305] = "Use Proxy";
-        codePhrase[306] = "Switch Proxy";
-        codePhrase[307] = "Temporary Redirect";
-        codePhrase[308] = "Permanent Redirect";
+            codePhrase[300] = "Multiple Choices";
+            codePhrase[301] = "Moved Permanently";
+            codePhrase[302] = "Found";
+            codePhrase[303] = "See Other";
+            codePhrase[304] = "Not Modified";
+            codePhrase[305] = "Use Proxy";
+            codePhrase[306] = "Switch Proxy";
+            codePhrase[307] = "Temporary Redirect";
+            codePhrase[308] = "Permanent Redirect";
 
-        codePhrase[400] = "Bad Request";
-        codePhrase[401] = "Unauthorized";
-        codePhrase[402] = "Payment Required";
-        codePhrase[403] = "Forbidden";
-        codePhrase[404] = "Not Found";
-        codePhrase[405] = "Method Not Allowed";
-        codePhrase[406] = "Not Acceptable";
-        codePhrase[407] = "Proxy Authentication Required";
-        codePhrase[408] = "Request Timeout";
-        codePhrase[409] = "Conflict";
-        codePhrase[410] = "Gone";
-        codePhrase[411] = "Length Required";
-        codePhrase[412] = "Precondition Failed";
-        codePhrase[413] = "Request Entity Too Large";
-        codePhrase[414] = "Request-URI Too Long";
-        codePhrase[415] = "Unsupported Media Type";
-        codePhrase[416] = "Requested Range Not Satisfiable";
-        codePhrase[417] = "Expectation Failed";
-        codePhrase[418] = "I'm a teapot";
-        codePhrase[420] = "Enhance Your Caim";
-        codePhrase[421] = "Misdirected Request";
-        codePhrase[422] = "Unprocessable Entity";
-        codePhrase[423] = "Locked";
-        codePhrase[424] = "Failed Dependency";
-        codePhrase[425] = "Unordered Collection";
-        codePhrase[426] = "Upgrade Required";
-        codePhrase[428] = "Precondition Required";
-        codePhrase[429] = "Too Many Requests";
-        codePhrase[431] = "Request Header Fields Too Large";
-        codePhrase[444] = "No Response";
-        codePhrase[450] = "Blocked by Windows Parental Controls";
-        codePhrase[451] = "Unavailable For Legal Reasons";
-        codePhrase[494] = "Request Header Too Large";
+            codePhrase[400] = "Bad Request";
+            codePhrase[401] = "Unauthorized";
+            codePhrase[402] = "Payment Required";
+            codePhrase[403] = "Forbidden";
+            codePhrase[404] = "Not Found";
+            codePhrase[405] = "Method Not Allowed";
+            codePhrase[406] = "Not Acceptable";
+            codePhrase[407] = "Proxy Authentication Required";
+            codePhrase[408] = "Request Timeout";
+            codePhrase[409] = "Conflict";
+            codePhrase[410] = "Gone";
+            codePhrase[411] = "Length Required";
+            codePhrase[412] = "Precondition Failed";
+            codePhrase[413] = "Request Entity Too Large";
+            codePhrase[414] = "Request-URI Too Long";
+            codePhrase[415] = "Unsupported Media Type";
+            codePhrase[416] = "Requested Range Not Satisfiable";
+            codePhrase[417] = "Expectation Failed";
+            codePhrase[418] = "I'm a teapot";
+            codePhrase[420] = "Enhance Your Caim";
+            codePhrase[421] = "Misdirected Request";
+            codePhrase[422] = "Unprocessable Entity";
+            codePhrase[423] = "Locked";
+            codePhrase[424] = "Failed Dependency";
+            codePhrase[425] = "Unordered Collection";
+            codePhrase[426] = "Upgrade Required";
+            codePhrase[428] = "Precondition Required";
+            codePhrase[429] = "Too Many Requests";
+            codePhrase[431] = "Request Header Fields Too Large";
+            codePhrase[444] = "No Response";
+            codePhrase[450] = "Blocked by Windows Parental Controls";
+            codePhrase[451] = "Unavailable For Legal Reasons";
+            codePhrase[494] = "Request Header Too Large";
 
-        codePhrase[500] = "Internal Server Error";
-        codePhrase[501] = "Not Implemented";
-        codePhrase[502] = "Bad Gateway";
-        codePhrase[503] = "Service Unavailable";
-        codePhrase[504] = "Gateway Timeout";
-        codePhrase[505] = "HTTP Version Not Supported";
-        codePhrase[506] = "Variant Also Negotiates";
-        codePhrase[507] = "Insufficient Storage";
-        codePhrase[508] = "Loop Detected";
-        codePhrase[510] = "Not Extended";
-        codePhrase[511] = "Network Authentication Required";
-    }
+            codePhrase[500] = "Internal Server Error";
+            codePhrase[501] = "Not Implemented";
+            codePhrase[502] = "Bad Gateway";
+            codePhrase[503] = "Service Unavailable";
+            codePhrase[504] = "Gateway Timeout";
+            codePhrase[505] = "HTTP Version Not Supported";
+            codePhrase[506] = "Variant Also Negotiates";
+            codePhrase[507] = "Insufficient Storage";
+            codePhrase[508] = "Loop Detected";
+            codePhrase[510] = "Not Extended";
+            codePhrase[511] = "Network Authentication Required";
+        }
 
-    std::unordered_map<unsigned long, std::string> codePhrase;
+        std::unordered_map<unsigned long, std::string> codePhrase;
 
-   public:
-    StatusCodeMap(const StatusCodeMap &) = delete;
-    StatusCodeMap &operator=(const StatusCodeMap &) = delete;
+    public:
+        StatusCodeMap(const StatusCodeMap &) = delete;
 
-    std::string getPharseByCode(unsigned long code) {
-        std::unordered_map<unsigned long, std::string>::const_iterator got =
-            codePhrase.find(code);
-        return (got == codePhrase.end()) ? "" : got->second;
-    }
+        StatusCodeMap &operator=(const StatusCodeMap &) = delete;
 
-    static StatusCodeMap &GetInstance() {
-        static StatusCodeMap instance;  //局部静态变量
-        return instance;
-    }
-};
+        std::string getPharseByCode(unsigned long code) {
+            std::unordered_map<unsigned long, std::string>::const_iterator got =
+                    codePhrase.find(code);
+            return (got == codePhrase.end()) ? "" : got->second;
+        }
+
+        static StatusCodeMap &GetInstance() {
+            static StatusCodeMap instance;  //局部静态变量
+            return instance;
+        }
+    };
 }
 
 #endif

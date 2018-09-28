@@ -32,13 +32,13 @@ namespace vstring {
         pos1 = 0;
         pos2 = str.find(delim);
 
-        while(std::string::npos != pos2) {
-            result.push_back(str.substr(pos1, pos2-pos1));
+        while (std::string::npos != pos2) {
+            result.push_back(str.substr(pos1, pos2 - pos1));
 
             pos1 = pos2 + delim.size();
             pos2 = str.find(delim, pos1);
         }
-        if(pos1 != str.length())
+        if (pos1 != str.length())
             result.push_back(str.substr(pos1));
         return result;
     }
@@ -49,7 +49,7 @@ namespace vstring {
 
     std::string join(const std::vector<std::string> &strs, const std::string &seq) {
         std::string result;
-        for (size_t i = 0; i < strs.size()-1; ++i) {
+        for (size_t i = 0; i < strs.size() - 1; ++i) {
             result += (strs[i] + seq);
         }
         result += strs.back();
@@ -70,7 +70,7 @@ namespace vstring {
         if (end == std::string::npos) {
             return "";
         } else {
-            return str.substr(0, end+1);
+            return str.substr(0, end + 1);
         }
     }
 
@@ -123,8 +123,10 @@ namespace vtpl {
 
     vector<string> ParseToLines(string html_tpl) {
         std::vector<std::string> result;
-        size_t n = html_tpl.size(),  last_begin = 0;
-        unordered_map<string, string> open_close_m = { {"{{", "}}"},  {"{%", "%}"}, {"{#", "#}"} };
+        size_t n = html_tpl.size(), last_begin = 0;
+        unordered_map<string, string> open_close_m = {{"{{", "}}"},
+                                                      {"{%", "%}"},
+                                                      {"{#", "#}"}};
 
         for (size_t i = 0; i < n; ++i) {
             auto open = html_tpl.substr(i, 2);
@@ -149,21 +151,21 @@ namespace vtpl {
         return result;
     }
 
-    class Environment: public Json {
+    class Environment : public Json {
 
     private:
-        template <typename T>
+        template<typename T>
         auto GetData(const T &data, size_t index, const vector<string> &keys) -> decltype(data[keys[index]]) {
             if (keys.size() - 1 == index) {
                 return data[keys[index]];
             } else {
-                return GetData(data[keys[index]], index+1, keys);
+                return GetData(data[keys[index]], index + 1, keys);
             }
         }
 
     public:
 
-        auto Get(const string &key) ->decltype(GetData((*this), 0, split(key, "."))) {
+        auto Get(const string &key) -> decltype(GetData((*this), 0, split(key, "."))) {
             auto keys = split(key, ".");
             return GetData((*this), 0, keys);
         }
@@ -171,11 +173,11 @@ namespace vtpl {
 
     class Template {
     public:
-        Template(string &html_tpl):
+        Template(string &html_tpl) :
                 html_tpl_(std::move(html_tpl)) {
         }
 
-        Template(string &&html_tpl):
+        Template(string &&html_tpl) :
                 html_tpl_(html_tpl) {
         }
 
@@ -252,7 +254,7 @@ namespace vtpl {
         }
 
         vector<string> GetTokens(const string &item) {
-            return split(strip(item.substr(2, item.size()-4)));
+            return split(strip(item.substr(2, item.size() - 4)));
         }
 
         string IfBlock(vector<string> &stk, Environment &env) {
@@ -292,7 +294,7 @@ namespace vtpl {
             return env.Get(cond.front());
         }
 
-        template <typename JsonObj>
+        template<typename JsonObj>
         string JsonToString(const JsonObj &obj) {
             return strip(obj.dump(), "\"\n");
         }

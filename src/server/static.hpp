@@ -21,6 +21,7 @@
 
 #ifndef __STATIC_SERVER_HPP__
 #define __STATIC_SERVER_HPP__
+
 #include "mime.hpp"
 #include "request.hpp"
 #include "response.hpp"
@@ -58,8 +59,7 @@ struct range {
 // store them to the range struct, if there are multi ranges in Ranges, them
 // store each range struct to a range vector,and return the range vector.
 std::pair<std::vector<range>, bool> parseRange(std::string Ranges,
-    const size_t total_size)
-{
+                                               const size_t total_size) {
     std::vector<range> vr;
 
     // if startwith 'bytes '
@@ -117,8 +117,7 @@ std::pair<std::vector<range>, bool> parseRange(std::string Ranges,
 }
 
 
-unsigned long sumRanges(const std::vector<range>& vr)
-{
+unsigned long sumRanges(const std::vector<range> &vr) {
     unsigned long sumRange = 0;
     for (auto r : vr)
         sumRange += r.len;
@@ -131,8 +130,7 @@ unsigned long sumRanges(const std::vector<range>& vr)
 // A---> i-node number(serial number) of the file
 // B---> time of last modification of the file
 // C---> size of bytes of the file
-const std::string getEtag(const std::string& filename)
-{
+const std::string getEtag(const std::string &filename) {
     struct stat statbuf;
     stat(filename.c_str(), &statbuf);
     std::stringstream ss;
@@ -146,12 +144,11 @@ const std::string getEtag(const std::string& filename)
 // if Gmt time string is smaller than(earlier) modifiy time. it returns a
 // negative number, otherwise returns a positive number. if the two time is
 // equal, it returns zero.
-double compareTime(const std::string& GmtString,
-    const struct timespec& lastModifiedTime)
-{
+double compareTime(const std::string &GmtString,
+                   const struct timespec &lastModifiedTime) {
     tm tm_;
     time_t t_;
-    char buf[128] = { 0 };
+    char buf[128] = {0};
 
     strcpy(buf, GmtString.c_str());
     strptime(buf, "%a, %d %b %Y %H:%M:%S GMT", &tm_);
@@ -163,11 +160,10 @@ double compareTime(const std::string& GmtString,
 }
 
 
-std::string getGmtLastModifiedTime(const struct timespec& lastModifiedTime)
-{
+std::string getGmtLastModifiedTime(const struct timespec &lastModifiedTime) {
     time_t rawTime = lastModifiedTime.tv_sec;
-    struct tm* timeInfo;
-    char szTemp[30] = { 0 };
+    struct tm *timeInfo;
+    char szTemp[30] = {0};
     timeInfo = gmtime(&rawTime);
     strftime(szTemp, sizeof(szTemp), "%a, %d %b %Y %H:%M:%S GMT", timeInfo);
     return std::string(szTemp);
@@ -175,8 +171,7 @@ std::string getGmtLastModifiedTime(const struct timespec& lastModifiedTime)
 
 
 // ETag值匹配才发送资源
-Cond checkIfMatch(vogro::Request& request, const std::string& filename)
-{
+Cond checkIfMatch(vogro::Request &request, const std::string &filename) {
     auto IfMatchHeadString = request.getHeader("If-Match");
     auto im = trim(IfMatchHeadString);
     if (im == "")
@@ -189,9 +184,8 @@ Cond checkIfMatch(vogro::Request& request, const std::string& filename)
 }
 
 
-Cond checkIfUnmodifiedSince(vogro::Request& request,
-    const struct timespec& lastModifiedTime)
-{
+Cond checkIfUnmodifiedSince(vogro::Request &request,
+                            const struct timespec &lastModifiedTime) {
     auto IfUnmodifiedSinceString = request.getHeader("If-Unmodified-Since");
     auto iums = trim(IfUnmodifiedSinceString);
     if (iums == "")
@@ -202,8 +196,7 @@ Cond checkIfUnmodifiedSince(vogro::Request& request,
 }
 
 
-Cond checkIfNoneMatch(vogro::Request& request, const std::string& filename)
-{
+Cond checkIfNoneMatch(vogro::Request &request, const std::string &filename) {
     auto IfNoneMatchString = request.getHeader("If-None-Match");
     auto inm = trim(IfNoneMatchString);
     if (inm == "")
@@ -214,9 +207,8 @@ Cond checkIfNoneMatch(vogro::Request& request, const std::string& filename)
 }
 
 
-Cond checkIfModifiedSince(vogro::Request& request,
-    const struct timespec& lastModifiedTime)
-{
+Cond checkIfModifiedSince(vogro::Request &request,
+                          const struct timespec &lastModifiedTime) {
     if (request.getMethod() != "GET" && request.getMethod() != "HEAD")
         return CondNone;
     auto ims = request.getHeader("If-Modified-Since");
@@ -232,9 +224,8 @@ Cond checkIfModifiedSince(vogro::Request& request,
 // if mathced, a range request,otherwise to return all the content to the client
 // more infomation, see
 // https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/If-Range
-Cond checkIfRange(vogro::Request& request, const std::string& filename,
-    const struct timespec& lastModifiedTime)
-{
+Cond checkIfRange(vogro::Request &request, const std::string &filename,
+                  const struct timespec &lastModifiedTime) {
     if (request.getMethod() != "GET" && request.getMethod() != "HEAD")
         return CondNone;
 
@@ -258,9 +249,8 @@ Cond checkIfRange(vogro::Request& request, const std::string& filename,
 }
 
 
-std::pair<bool, std::string>CheckPreconditons(vogro::Response& response, vogro::Request& request,
-    const struct timespec& lastModifiedTime, const std::string& filename)
-{
+std::pair<bool, std::string> CheckPreconditons(vogro::Response &response, vogro::Request &request,
+                                               const struct timespec &lastModifiedTime, const std::string &filename) {
     auto checkResult = checkIfMatch(request, filename);
     if (checkResult == CondNone) {
         checkResult = checkIfUnmodifiedSince(request, lastModifiedTime);
@@ -273,23 +263,23 @@ std::pair<bool, std::string>CheckPreconditons(vogro::Response& response, vogro::
     }
 
     switch (checkIfNoneMatch(request, filename)) {
-    case CondFalse:
-        if (request.getMethod() == "GET" || request.getMethod() == "HEAD") {
-            response.setCode(CodeNotModified_304, "Not Modified");
-        } else {
-            response.setCode(CodePreconditionFailed_412, "Precondition Failed");
-        }
-        return std::make_pair(true, "");
-        break;
-    case CondNone:
-        auto checkIfModifiedSinceResult = checkIfModifiedSince(request, lastModifiedTime);
-        if (checkIfModifiedSinceResult == CondFalse) {
-            response.setCode(CodeNotModified_304, "Not Modified");
+        case CondFalse:
+            if (request.getMethod() == "GET" || request.getMethod() == "HEAD") {
+                response.setCode(CodeNotModified_304, "Not Modified");
+            } else {
+                response.setCode(CodePreconditionFailed_412, "Precondition Failed");
+            }
             return std::make_pair(true, "");
-        } // else if (checkIfModifiedSinceResult ==CondNone){
-        //      return std::make_pair(false, "");
-        // }
-        break;
+            break;
+        case CondNone:
+            auto checkIfModifiedSinceResult = checkIfModifiedSince(request, lastModifiedTime);
+            if (checkIfModifiedSinceResult == CondFalse) {
+                response.setCode(CodeNotModified_304, "Not Modified");
+                return std::make_pair(true, "");
+            } // else if (checkIfModifiedSinceResult ==CondNone){
+            //      return std::make_pair(false, "");
+            // }
+            break;
     }
 
     auto rangeHeader = request.getHeader("Range");
@@ -300,14 +290,13 @@ std::pair<bool, std::string>CheckPreconditons(vogro::Response& response, vogro::
 }
 
 
-template <typename socket_type>
-void ServeStatic(vogro::Response& response, vogro::Request& request,
-    std::ostream& responseStream,
-    std::shared_ptr<boost::asio::streambuf>& write_buffer,
-    socket_type socket)
-{
+template<typename socket_type>
+void ServeStatic(vogro::Response &response, vogro::Request &request,
+                 std::ostream &responseStream,
+                 std::shared_ptr<boost::asio::streambuf> &write_buffer,
+                 socket_type socket) {
     // get current work dir
-    char* buffer;
+    char *buffer;
     if ((buffer = getcwd(NULL, 0)) == NULL) {
         // return 500 to client
         perror("getcwd error");
@@ -326,8 +315,8 @@ void ServeStatic(vogro::Response& response, vogro::Request& request,
         response.setCode(CodeNotFound_404);
         responseStream << response.makeResponseMsg();
         boost::asio::async_write(
-            *socket, *write_buffer,
-            [](const boost::system::error_code& ec, size_t bytes_transferred) {});
+                *socket, *write_buffer,
+                [](const boost::system::error_code &ec, size_t bytes_transferred) {});
         return;
     }
 
@@ -347,14 +336,14 @@ void ServeStatic(vogro::Response& response, vogro::Request& request,
         // handler end, return to client
         responseStream << response.makeResponseMsg();
         boost::asio::async_write(
-            *socket, *write_buffer,
-            [](const boost::system::error_code& ec, size_t bytes_transferred) {});
+                *socket, *write_buffer,
+                [](const boost::system::error_code &ec, size_t bytes_transferred) {});
         return;
     }
 
-      // get file type
+    // get file type
     auto ext = getFileExtension(filepath);
-    MimeTypeMap& mime = MimeTypeMap::GetInstance();
+    MimeTypeMap &mime = MimeTypeMap::GetInstance();
     auto type = mime.getMimeTypeByExt(ext);
 
     if (type == "") {
@@ -362,8 +351,8 @@ void ServeStatic(vogro::Response& response, vogro::Request& request,
         response.setCode(CodeUnsupportedMediaType_415);
         responseStream << response.makeResponseMsg();
         boost::asio::async_write(
-            *socket, *write_buffer,
-            [](const boost::system::error_code& ec, size_t bytes_transferred) {});
+                *socket, *write_buffer,
+                [](const boost::system::error_code &ec, size_t bytes_transferred) {});
 
         return;
     }
@@ -371,21 +360,21 @@ void ServeStatic(vogro::Response& response, vogro::Request& request,
     response.addHeader("Content-Type", type);
 
 
-    if(preconditionCheckResult.second == ""){
+    if (preconditionCheckResult.second == "") {
         response.setCode(CodeOK_200);
-        
-        response.addHeader("ETag",getEtag(filepath));
-        response.addHeader("Last-Modified",getGmtLastModifiedTime(lastModifiedTime));
+
+        response.addHeader("ETag", getEtag(filepath));
+        response.addHeader("Last-Modified", getGmtLastModifiedTime(lastModifiedTime));
         response.getResponseBodyStrem() << _file.rdbuf();
 
         responseStream << response.makeResponseMsg();
         boost::asio::async_write(*socket, *write_buffer,
-            [](const boost::system::error_code &ec,size_t bytes_transferred) {});
+                                 [](const boost::system::error_code &ec, size_t bytes_transferred) {});
         return;
-        
+
     }
 
-  
+
     // response.addHeader("Connection", "Keep-Alive");
     // response.addHeader("Accept-Ranges", "bytes");
     // std::vector<range> ranges;
@@ -397,8 +386,8 @@ void ServeStatic(vogro::Response& response, vogro::Request& request,
         response.setCode(CodeRequestedRangeNotSatisfiable_416);
         responseStream << response.makeResponseMsg();
         boost::asio::async_write(
-            *socket, *write_buffer,
-            [](const boost::system::error_code& ec, size_t bytes_transferred) {});
+                *socket, *write_buffer,
+                [](const boost::system::error_code &ec, size_t bytes_transferred) {});
         return;
     }
 
@@ -417,43 +406,43 @@ void ServeStatic(vogro::Response& response, vogro::Request& request,
         response.addHeader("Content-Range", contentRange.str());
 
         response.addHeader("Accept-Ranges", "bytes");
-        if (response.getHeader("Content-Encoding") == ""){
+        if (response.getHeader("Content-Encoding") == "") {
             response.addHeader("Content-Length", std::to_string(range.len));
         }
 
         if (request.getMethod() == "HEAD") {
             responseStream << response.makeResponseMsg();
             boost::asio::async_write(
-                *socket, *write_buffer,
-                [](const boost::system::error_code& ec, size_t bytes_transferred) {});
-                return;
+                    *socket, *write_buffer,
+                    [](const boost::system::error_code &ec, size_t bytes_transferred) {});
+            return;
         } else {
             _file.seekg(range.start, std::ios::beg);
-            
+
             auto readLength = range.len;
             auto send_count = 0;
-            responseStream<<response.makeResponseMsgWithoutBody();
+            responseStream << response.makeResponseMsgWithoutBody();
 
-            while(send_count <readLength){
+            while (send_count < readLength) {
                 std::string str(4096, '\0'); // construct string to stream size
                 send_count += _file.gcount();
-                std::cout<<send_count<<std::endl;
+                std::cout << send_count << std::endl;
 
-                if(readLength- send_count <4096){
-                    _file.read(&str[0],readLength- send_count);
+                if (readLength - send_count < 4096) {
+                    _file.read(&str[0], readLength - send_count);
 
                     responseStream << str;
                     boost::asio::write(*socket, *write_buffer);//,
                     //[](const boost::system::error_code& ec, size_t bytes_transferred) {});
 
-                }else{
+                } else {
                     _file.read(&str[0], 4096);
 
                     responseStream << str;
                     boost::asio::write(*socket, *write_buffer);//,
                     //[](const boost::system::error_code& ec, size_t bytes_transferred) {});
                 }
-        }
+            }
             return;
 
         }

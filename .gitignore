@@ -35,3 +35,5 @@
 .idea
 static
 vogro
+demo/build
+src/build

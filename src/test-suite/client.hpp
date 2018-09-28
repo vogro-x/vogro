@@ -26,61 +26,54 @@ using boost::asio::ip::tcp;
 
 namespace vogro {
 
-class VogroTestClient {
-private:
-    std::string serverIP;
-    std::string serverPort;
-    boost::asio::io_service ios;
-    std::shared_ptr<boost::asio::ip::tcp::socket> socket = std::make_shared<boost::asio::ip::tcp::socket>(ios);
+    class VogroTestClient {
+    private:
+        std::string serverIP;
+        std::string serverPort;
+        boost::asio::io_service ios;
+        std::shared_ptr <boost::asio::ip::tcp::socket> socket =
+                std::make_shared<boost::asio::ip::tcp::socket>(ios);
 
-public:
-    VogroTestClient(const std::string& ip, const ::std::string& port)
-        : serverIP(ip)
-        , serverPort(port)
-    {
+    public:
+        VogroTestClient(const std::string &ip, const ::std::string &port) : serverIP(ip), serverPort(port) {
 
-        boost::asio::ip::tcp::resolver::query resolver_query(this->serverIP, this->serverPort,
-            boost::asio::ip::tcp::resolver::query::numeric_service);
+            boost::asio::ip::tcp::resolver::query resolver_query(this->serverIP, this->serverPort,
+                                                                 boost::asio::ip::tcp::resolver::query::numeric_service);
 
-        boost::asio::ip::tcp::resolver resolver(ios);
+            boost::asio::ip::tcp::resolver resolver(ios);
 
-        try {
-            boost::asio::ip::tcp::resolver::iterator it = resolver.resolve(resolver_query);
-            boost::asio::connect(*socket, it);
-        } catch (boost::system::system_error& e) {
-            std::cout << e.what() << std::endl;
+            try {
+                boost::asio::ip::tcp::resolver::iterator it = resolver.resolve(resolver_query);
+                boost::asio::connect(*socket, it);
+            } catch (boost::system::system_error &e) {
+                std::cout << e.what() << std::endl;
+            }
         }
-    }
 
-    ~VogroTestClient(){
-        // printf("\033[1;32mHello,world\033[0m\n");
-        std::cout<<INITCOLOR(BLUE_COLOR)<<"Successed"<<INITCOLOR(ZERO_COLOR)<<std::endl;
-    }
+        ~VogroTestClient() {
+            std::cout << INITCOLOR(BLUE_COLOR) << "Successed" << INITCOLOR(ZERO_COLOR) << std::endl;
+        }
 
-    Request& Get(const std::string& path)
-    {
-        auto p = std::make_shared<Request>("GET", path, this->socket, this->serverIP, this->serverPort);
-        return *p;
-    }
+        Request &Get(const std::string &path) {
+            auto p = std::make_shared<Request>("GET", path, this->socket, this->serverIP, this->serverPort);
+            return *p;
+        }
 
-    Request& Post(const std::string& path)
-    {
-        auto p = std::make_shared<Request>("POST", path, this->socket, this->serverIP, this->serverPort);
-        return *p;
-    }
+        Request &Post(const std::string &path) {
+            auto p = std::make_shared<Request>("POST", path, this->socket, this->serverIP, this->serverPort);
+            return *p;
+        }
 
-    Request& Put(const std::string& path)
-    {
-        auto p = std::make_shared<Request>("PUT", path, this->socket, this->serverIP, this->serverPort);
-        return *p;
-    }
+        Request &Put(const std::string &path) {
+            auto p = std::make_shared<Request>("PUT", path, this->socket, this->serverIP, this->serverPort);
+            return *p;
+        }
 
-    Request& Delete(const std::string& path)
-    {
-        auto p = std::make_shared<Request>("DELETE", path, this->socket, this->serverIP, this->serverPort);
-        return *p;
-    }
-};
+        Request &Delete(const std::string &path) {
+            auto p = std::make_shared<Request>("DELETE", path, this->socket, this->serverIP, this->serverPort);
+            return *p;
+        }
+    };
 } //namespace vogro
 
 #endif

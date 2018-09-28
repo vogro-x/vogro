@@ -21,59 +21,52 @@
 
 namespace vogro {
 
-class Context {
+    class Context {
 
-private:
-    const std::vector<std::function<void(vogro::Context&)>>& g;
-    const std::vector<std::function<void(vogro::Context&)>>& l;
+    private:
+        const std::vector<std::function<void(vogro::Context &)>> &g;
+        const std::vector<std::function<void(vogro::Context &)>> &l;
 
-    std::vector<std::function<void(vogro::Context&)>>::const_iterator currentHandler = g.begin();
+        std::vector<std::function<void(vogro::Context &)>>::const_iterator currentHandler = g.begin();
 
-    std::map<std::string, std::string> values;
+        std::map<std::string, std::string> values;
 
-public:
-    std::shared_ptr<Request> request;
-    std::shared_ptr<Response> response;
+    public:
+        std::shared_ptr<Request> request;
+        std::shared_ptr<Response> response;
 
-    Context(std::shared_ptr<Request> req, std::shared_ptr<Response> res,
-        const std::vector<std::function<void(vogro::Context&)>>& global,
-        const std::vector<std::function<void(vogro::Context&)>>& local)
-        : request(req)
-        , response(res)
-        , g(global)
-        , l(local)
-    {
-    }
+        Context(std::shared_ptr<Request> req, std::shared_ptr<Response> res,
+                const std::vector<std::function<void(vogro::Context &)>> &global,
+                const std::vector<std::function<void(vogro::Context &)>> &local)
+                : request(req), response(res), g(global), l(local) {
+        }
 
-    void Next()
-    {
-        currentHandler++;
-        if (currentHandler != g.end()) {
-            (*currentHandler)(*this);
-            return;
-        } else {
-            currentHandler = l.begin();
-            if (currentHandler != l.end()) {
+        void Next() {
+            currentHandler++;
+            if (currentHandler != g.end()) {
                 (*currentHandler)(*this);
                 return;
             } else {
-                throw "No Next";
+                currentHandler = l.begin();
+                if (currentHandler != l.end()) {
+                    (*currentHandler)(*this);
+                    return;
+                } else {
+                    throw "No Next";
+                }
             }
         }
-    }
 
 
-    std::string getValue(const std::string key)
-    {
-        auto got = this->values.find(key);
-        return (got == this->values.end()) ? "" : got->second;
-    }
+        std::string getValue(const std::string key) {
+            auto got = this->values.find(key);
+            return (got == this->values.end()) ? "" : got->second;
+        }
 
-    void setValue(const std::string key, const std::string val)
-    {
-        this->values[key] = val;
-    }
-};
+        void setValue(const std::string key, const std::string val) {
+            this->values[key] = val;
+        }
+    };
 }
 
 #endif

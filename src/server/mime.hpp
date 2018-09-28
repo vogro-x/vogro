@@ -24,7 +24,7 @@
 // the following mime types is referenced from Ngnix's mime types
 
 class MimeTypeMap {
-   private:
+private:
     MimeTypeMap() {
         extMime["html"] = "text/html";
         extMime["htm"] = "text/html";
@@ -105,13 +105,13 @@ class MimeTypeMap {
         extMime["msp"] = "application/octet-stream";
         extMime["msm"] = "application/octet-stream";
         extMime["docx"] =
-            "application/"
-            "vnd.openxmlformats-officedocument.wordprocessingml.document";
+                "application/"
+                "vnd.openxmlformats-officedocument.wordprocessingml.document";
         extMime["xlsx"] =
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
         extMime["pptx"] =
-            "application/"
-            "vnd.openxmlformats-officedocument.presentationml.presentation";
+                "application/"
+                "vnd.openxmlformats-officedocument.presentationml.presentation";
         extMime["mid"] = "audio/midi";
         extMime["midi"] = "audio/midi";
         extMime["kar"] = "audio/midi";
@@ -136,10 +136,11 @@ class MimeTypeMap {
         extMime["avi"] = "video/x-msvideo";
     }
 
-    std::unordered_map<std::string, std::string> extMime;
+    std::unordered_map <std::string, std::string> extMime;
 
-   public:
+public:
     MimeTypeMap(const MimeTypeMap &) = delete;
+
     MimeTypeMap &operator=(const MimeTypeMap &) = delete;
 
     std::string getMimeTypeByExt(std::string ext) {

@@ -23,23 +23,23 @@
 
 namespace vogro {
 
-typedef boost::asio::ip::tcp::socket HTTP;
+    typedef boost::asio::ip::tcp::socket HTTP;
 
 //    template <>
-class Server : public ServerBase<HTTP> {
-   public:
-    Server(unsigned short port = 8080, size_t num_threads = 4)
-        : ServerBase<HTTP>::ServerBase(port, num_threads) {
-    }
+    class Server : public ServerBase<HTTP> {
+    public:
+        Server(unsigned short port = 8080, size_t num_threads = 4)
+                : ServerBase<HTTP>::ServerBase(port, num_threads) {
+        }
 
-   private:
-    void accept() {
-        auto socket = std::make_shared<HTTP>(io_svc);
-        acceptor.async_accept(*socket, [this, socket](const boost::system::error_code& ec) {
+    private:
+        void accept() {
+            auto socket = std::make_shared<HTTP>(io_svc);
+            acceptor.async_accept(*socket, [this, socket](const boost::system::error_code &ec) {
                 accept();  //递归调用accept
                 if (!ec) process_request_and_respond(socket);
             });
-    }
-};
+        }
+    };
 }  // namespace vogro
 #endif

@@ -32,157 +32,150 @@
 
 namespace vogro {
 
-class Request {
-private:
-    std::string method;
+    class Request {
+    private:
+        std::string method;
 
-    std::string path;
+        std::string path;
 
-    // 1.1,1.0,2.0
-    std::string version;
+        // 1.1,1.0,2.0
+        std::string version;
 
-    std::string host;
+        std::string host;
 
-    std::string remote_ip;
+        std::string remote_ip;
 
-    unsigned short remote_port;
+        unsigned short remote_port;
 
-    // http or https
-    std::string protocol;
+        // http or https
+        std::string protocol;
 
-    // the request body
-    std::shared_ptr<std::istream> body;
-    // pt::ptree jsonTree;
+        // the request body
+        std::shared_ptr<std::istream> body;
+        // pt::ptree jsonTree;
 
-    // request haeaders are stored in an unordered_map
-    std::unordered_map<std::string, std::string> headers;
+        // request haeaders are stored in an unordered_map
+        std::unordered_map<std::string, std::string> headers;
 
-    // the parameters in the url query string(urlencoded)
-    std::map<std::string, std::string> queryParam;
+        // the parameters in the url query string(urlencoded)
+        std::map<std::string, std::string> queryParam;
 
-    // the parameters in the form data(POST, urlencodeed)
-    std::map<std::string, std::string> formParam;
+        // the parameters in the form data(POST, urlencodeed)
+        std::map<std::string, std::string> formParam;
 
-    // the parameters in path
-    std::map<std::string, std::string> pathParam;
+        // the parameters in path
+        std::map<std::string, std::string> pathParam;
 
-public:
-    std::string getMethod() { return this->method; }
+    public:
+        std::string getMethod() { return this->method; }
 
-    void setMethod(const std::string& mhd) { this->method = mhd; }
+        void setMethod(const std::string &mhd) { this->method = mhd; }
 
-    std::string getPath() { return this->path; }
+        std::string getPath() { return this->path; }
 
-    void setPath(const std::string& ph) { this->path = ph; }
+        void setPath(const std::string &ph) { this->path = ph; }
 
-    std::string getVersion() { return this->version; }
+        std::string getVersion() { return this->version; }
 
-    void setVersion(const std::string& vsn) { this->version = vsn; }
+        void setVersion(const std::string &vsn) { this->version = vsn; }
 
-    std::string getHost() { return this->host; }
+        std::string getHost() { return this->host; }
 
-    void setHost(const std::string& hst) { this->host = hst; }
+        void setHost(const std::string &hst) { this->host = hst; }
 
-    std::string getRemoteIP() { return this->remote_ip; }
+        std::string getRemoteIP() { return this->remote_ip; }
 
-    void setRemoteIP(const std::string& r_ip) { this->remote_ip = r_ip; }
+        void setRemoteIP(const std::string &r_ip) { this->remote_ip = r_ip; }
 
-    unsigned short getRemotePort() { return this->remote_port; }
+        unsigned short getRemotePort() { return this->remote_port; }
 
-    void setRemotePort(const unsigned short port) { this->remote_port = port; }
+        void setRemotePort(const unsigned short port) { this->remote_port = port; }
 
-    std::string getProtocol() { return this->protocol; }
+        std::string getProtocol() { return this->protocol; }
 
-    void setProtocol(const std::string& protoc) { this->protocol = protoc; }
+        void setProtocol(const std::string &protoc) { this->protocol = protoc; }
 
-    std::string getHeader(std::string key)
-    {
-        auto got = this->headers.find(key);
-        return (got == this->headers.end()) ? "" : got->second;
-    }
-
-    std::unordered_map<std::string, std::string> getHeaders() { return this->headers; }
-
-    void addHeader(std::string key, std::string val) { this->headers[key] = val; }
-
-    void setPathParam(std::map<std::string, std::string>& pathParam) { this->pathParam = pathParam; }
-
-    std::string getPathParam(std::string key)
-    {
-        auto got = this->pathParam.find(key);
-        return (got == this->pathParam.end()) ? "" : got->second;
-    }
-
-    void setQueryParam(std::string queryString) { this->queryParam = split_query_string(queryString); }
-
-    std::string getQueryParam(std::string key)
-    {
-        auto got = this->queryParam.find(key);
-        return (got == this->queryParam.end()) ? "" : got->second;
-    }
-
-    void setFormParam(std::string formData) { this->formParam = split_query_string(formData); }
-
-    std::string getFormParam(std::string key)
-    {
-        auto got = this->formParam.find(key);
-        return (got == this->formParam.end()) ? "" : got->second;
-    }
-
-     std::shared_ptr<std::istream> getBody()
-     {
-            return this->body;
-    }
-
-    void setBody(std::shared_ptr<std::istream> p)
-    {
-            this->body = p;
-    }
-
-
-    // void ReadJSON(std::shared_ptr<std::istream> jsonPtr) { pt::read_json(*jsonPtr, jsonTree); }
-
-    nlohmann::json ReadJSON(){
-        std::string s;
-        *body >> s;
-        auto j = nlohmann::json::parse(s);
-        return j;
-    }
-
-    // const pt::ptree& GetJsonTree() { return this->jsonTree; }
-
-    std::string getCookie(std::string key = "")
-    {
-        auto cookieString = this->getHeader("Cookie");
-        if (key == "" || cookieString == "")
-            return cookieString;
-
-        auto tokens = split(cookieString, ',');
-        for (auto tk : tokens) {
-            auto kv = split(tk, '=');
-            if (kv.size() == 2 && trim(kv[0]) == key)
-                return kv[1];
+        std::string getHeader(std::string key) {
+            auto got = this->headers.find(key);
+            return (got == this->headers.end()) ? "" : got->second;
         }
 
-        return "";
-    }
+        std::unordered_map<std::string, std::string> getHeaders() { return this->headers; }
 
-    std::pair<std::string,std::string> basicAuth() {
-        auto auth = this->getHeader("Authorization");
-        if (auth.rfind("Basic ", 0) != 0) 
-            return std::make_pair("","");
+        void addHeader(std::string key, std::string val) { this->headers[key] = val; }
 
-        auth =auth.substr(6);
+        void setPathParam(std::map<std::string, std::string> &pathParam) { this->pathParam = pathParam; }
 
-        auto decoded_auth = base64_decode(auth);
+        std::string getPathParam(std::string key) {
+            auto got = this->pathParam.find(key);
+            return (got == this->pathParam.end()) ? "" : got->second;
+        }
 
-        auto result = split(decoded_auth,':');
-        if(result.size()==1)
-            return std::make_pair(result[0],"");
-        
-        return std::make_pair(result[0],result[1]);
-    }
-};
+        void setQueryParam(std::string queryString) { this->queryParam = split_query_string(queryString); }
+
+        std::string getQueryParam(std::string key) {
+            auto got = this->queryParam.find(key);
+            return (got == this->queryParam.end()) ? "" : got->second;
+        }
+
+        void setFormParam(std::string formData) { this->formParam = split_query_string(formData); }
+
+        std::string getFormParam(std::string key) {
+            auto got = this->formParam.find(key);
+            return (got == this->formParam.end()) ? "" : got->second;
+        }
+
+        std::shared_ptr<std::istream> getBody() {
+            return this->body;
+        }
+
+        void setBody(std::shared_ptr<std::istream> p) {
+            this->body = p;
+        }
+
+
+        // void ReadJSON(std::shared_ptr<std::istream> jsonPtr) { pt::read_json(*jsonPtr, jsonTree); }
+
+        nlohmann::json ReadJSON() {
+            std::string s;
+            *body >> s;
+            auto j = nlohmann::json::parse(s);
+            return j;
+        }
+
+        // const pt::ptree& GetJsonTree() { return this->jsonTree; }
+
+        std::string getCookie(std::string key = "") {
+            auto cookieString = this->getHeader("Cookie");
+            if (key == "" || cookieString == "")
+                return cookieString;
+
+            auto tokens = split(cookieString, ',');
+            for (auto tk : tokens) {
+                auto kv = split(tk, '=');
+                if (kv.size() == 2 && trim(kv[0]) == key)
+                    return kv[1];
+            }
+
+            return "";
+        }
+
+        std::pair<std::string, std::string> basicAuth() {
+            auto auth = this->getHeader("Authorization");
+            if (auth.rfind("Basic ", 0) != 0)
+                return std::make_pair("", "");
+
+            auth = auth.substr(6);
+
+            auto decoded_auth = base64_decode(auth);
+
+            auto result = split(decoded_auth, ':');
+            if (result.size() == 1)
+                return std::make_pair(result[0], "");
+
+            return std::make_pair(result[0], result[1]);
+        }
+    };
 
 } // namespace vogro
 

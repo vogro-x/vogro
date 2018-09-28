@@ -11,8 +11,8 @@ int main()
     vogro::Server server(8080, 4);
     // vogro::Server server(8080,4,"../cert/server.crt","../cert/server.key");
 
-    server.Use(TestMiddleWare1);
-    server.Use(TestMiddleWare2);
+    // server.Use(TestMiddleWare1);
+    // server.Use(TestMiddleWare2);
 
     server.addRoute("/", "GET", [](vogro::Context& ctx) {
         ctx.response->addBody("<h1>Index Page</h1>");

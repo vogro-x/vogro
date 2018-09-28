@@ -20,9 +20,9 @@
 #include "status.hpp"
 #include "common.hpp"
 
-void DefaultErrorHandler(vogro::Request& request, vogro::Response& response) {
+void DefaultErrorHandler(vogro::Request &request, vogro::Response &response) {
     auto code = response.getCode();
-    vogro::StatusCodeMap& codeMap = vogro::StatusCodeMap::GetInstance();
+    vogro::StatusCodeMap &codeMap = vogro::StatusCodeMap::GetInstance();
     auto pharse = codeMap.getPharseByCode(code);
     std::stringstream ss;
     ss << "<center><h1>" << code << " " << pharse << "</h1><br/>";
