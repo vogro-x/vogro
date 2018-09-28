@@ -23,6 +23,7 @@ enum severity_type {
     warn,
 };
 
+#include <mutex>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -141,6 +142,7 @@ public:
             ssp = std::shared_ptr<std::stringstream>(new std::stringstream);
         }
 
+        write_mutex.lock();
         (*ssp) << "[" << getCurrentTime() << "] ";
         switch (severity) {
             case severity_type::info:
@@ -176,6 +178,7 @@ public:
                 break;
         };
         this->print_impl(args...);
+         write_mutex.unlock();
     }
 
     template<typename... Args>
@@ -199,6 +202,7 @@ public:
     }
 
 private:
+    std::mutex write_mutex;
     // policy_type policy;
     std::shared_ptr <policy_type> p;
 
