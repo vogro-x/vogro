@@ -34,19 +34,7 @@ int main()
         return;
     });
 
-    /**************************************************
-    此处请求的时候一定要有Content-Length头部，后面这里需要改进
-    示例请求
 
-    POST /a/post/ HTTP/1.1
-    Host: 127.0.0.1:12345
-    Content-Type: application/json
-    Content-Length: 20
-    Cache-Control: no-cache
-    Postman-Token: c8810efa-1872-fb0c-978f-c365b14af5f5
-
-    {"name":"andrewpqc"}
-    ****************************************************/
     server.addRoute("/a/post/", "POST", [](vogro::Context& ctx) {
         auto json = ctx.request->ReadJSON();
         auto name = json.at("name").get<std::string>();
