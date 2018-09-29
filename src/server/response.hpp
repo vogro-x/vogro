@@ -31,11 +31,11 @@ namespace vogro {
 
     class Response {
     private:
-        int code;
+        int code = 200;
 
-        std::string version;
+        std::string version= "1.1";
 
-        std::string phrase;
+        std::string phrase="OK";
 
         std::unordered_map<std::string, std::string> headers;
 
@@ -54,21 +54,16 @@ namespace vogro {
     public:
         //构造函数
         Response() {
-            // set default code,version,phare
-            this->code = CodeOK_200;
-            this->version = "1.1";
-            this->phrase = "OK";
-
             // add Server header
             std::string server = "vorgo/";
             server += __VOGRO_VERSION__;
             server += ", https://github.com/Andrewpqc/vogro";
-            this->addHeader("Server", server);
+            this->headers["Server"] = server;
 
             // add Date header
-            this->addHeader("Date", this->getCurrentCMTTime());
+            this->headers["Date"] = this->getCurrentCMTTime();
             // add Content-Type header
-            this->addHeader("Content-Type", "text/html; charset=utf-8");
+            this->headers["Content-Type"] = "text/html; charset=utf-8";
         }
 
         int getCode() { return this->code; }
@@ -79,14 +74,14 @@ namespace vogro {
             this->phrase = codeMap.getPharseByCode(code);
         }
 
-        void setCode(int code, std::string phrase) {
+        void setCode(int code, const std::string & phrase) {
             this->code = code;
             this->phrase = phrase;
         }
 
-        void setPhrase(std::string phrase) { this->phrase = phrase; }
+        void setPhrase(const std::string & phrase) { this->phrase = phrase; }
 
-        void addHeader(std::string key, std::string val) { this->headers[key] = val; }
+        void addHeader(const std::string & key, const std::string & val) { this->headers[key] = val; }
 
         std::string getHeader(std::string key) {
             auto got = this->headers.find(key);
@@ -113,8 +108,8 @@ namespace vogro {
          **************************************************************************/
 
 
-        void setCookie(std::string k, std::string v, std::string path = "/", bool httpOnly = true,
-                       std::string maxAge = "", std::string domain = "", std::string expires = "") {
+        void setCookie(const std::string & k, const std::string & v, const std::string & path = "/",
+                bool httpOnly = true, const std::string & maxAge = "", const std::string & domain = "", const std::string &expires = "") {
             std::stringstream ss;
             ss << k << "=" << v;
 
@@ -137,7 +132,7 @@ namespace vogro {
         }
 
 
-        void redirect(const std::string location, int code = 307) {
+        void redirect(const std::string & location, int code = 307) {
             this->setCode(code);
             this->addHeader("Location", location);
         }
@@ -147,11 +142,10 @@ namespace vogro {
             this->addBody(j.dump());
         }
 
-        void addBody(std::string cnt) { this->body << cnt; }
+        void addBody(const std::string& cnt) { this->body << cnt; }
 
         void renderTemplate(const std::string &html, const vtpl::Environment &env) {
             auto rendred = vtpl::TemplateRender(html, env);
-            // this->addHeader("Content-Type")
             this->addBody(rendred);
         }
 
@@ -178,7 +172,6 @@ namespace vogro {
             // add  response line
             responseMsg << "HTTP/" << this->version << " " << this->code << " "
                         << this->phrase << "\r\n";
-
             // add Content-Length header
             this->body.seekp(0, std::ios::end);
 

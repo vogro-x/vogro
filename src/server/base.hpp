@@ -320,14 +320,16 @@ namespace vogro {
                 else
                     got->second(*request, *response);
             }
-            responseStream << response->makeResponseMsg();
 
+            responseStream << response->makeResponseMsg();
+            int respCode = response->getCode();
             boost::asio::async_write(
                     *socket, *write_buffer,
-                    [this, socket, request, write_buffer, &response](
+                    [this, socket, request, write_buffer, respCode](
                             const boost::system::error_code &ec, size_t bytes_transferred) {
+
                         logger.LOG_DEBUG(request->getRemoteIP(), request->getMethod(),
-                                         request->getPath(), response->getCode());
+                                         request->getPath(), respCode);
 
                         if (!ec && std::stof(request->getVersion()) > 1.05)
                             process_request_and_respond(socket);

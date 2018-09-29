@@ -119,6 +119,10 @@ int main()
         env["name"] = name;
         ctx.response->renderTemplate("<h1>Hello, {{ name }} </h1>",env);
     });
+
+    server.Get("/hhh",[](vogro::Context& ctx){
+       ctx.response->addBody("hello");
+    });
     
     server.runServer();
     return 0;
