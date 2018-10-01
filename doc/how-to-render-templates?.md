@@ -1,0 +1,1 @@
+this is the page of how to render templates.
