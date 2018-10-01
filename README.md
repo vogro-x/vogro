@@ -28,7 +28,7 @@ void TestMiddleWare(vogro::Context& ctx) {
         ctx.Next();
 }
 
-nt main() {
+int main() {
 
     vogro::Server server(8080, 4);
 
