@@ -52,6 +52,7 @@ the above code started an http server which have 4 threads, each thread runs an 
 Want to know more ? See [Wiki Page](https://github.com/vogro-x/vogro/wiki).
 
 
-## Help
+## help
+vogro needs a full-feature static server for large file tranfer and we also need websocket support. So, if you want to imporve vogro, please pull request to this project. 
 
 
