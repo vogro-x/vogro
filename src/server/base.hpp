@@ -46,7 +46,7 @@ namespace vogro {
     private:
         std::string prefix_;
         RegistrationCenter &rc_;
-        const std::function<void(vogro::Context &)> groupGlobalHandler_;
+        const std::function<void(vogro::Context &)> groupGlobalHandler_= nullptr;
 
         Logger<TerminalPolicy> &logger = Logger<TerminalPolicy>::getLoggerInstance("vogro.log");
 
@@ -67,13 +67,17 @@ namespace vogro {
                 : prefix_(prefix), rc_(rc), groupGlobalHandler_(groupGlobalHandler) {
         }
 
+        Group(std::string prefix, RegistrationCenter & rc): prefix_(prefix),rc_(rc) {
+
+        }
+
         template<typename... Args>
         void Get(std::string userPath, const Args &... args) {
             if (prefix_.back() == '/')
                 prefix_.pop_back();
             auto path = prefix_ + userPath;
-
-            this->rc_[path]["GET"].push_back(groupGlobalHandler_);
+            if (this->groupGlobalHandler_ != nullptr)
+                this->rc_[path]["GET"].push_back(groupGlobalHandler_);
             this->addHandler(path, "GET", args...);
         }
 
@@ -82,7 +86,8 @@ namespace vogro {
             if (prefix_.back() == '/')
                 prefix_.pop_back();
             auto path = prefix_ + userPath;
-            this->rc_[path]["POST"].push_back(groupGlobalHandler_);
+            if (this ->groupGlobalHandler_ != nullptr)
+                this->rc_[path]["POST"].push_back(groupGlobalHandler_);
             this->addHandler(path, "POST", args...);
         }
 
@@ -91,7 +96,8 @@ namespace vogro {
             if (prefix_.back() == '/')
                 prefix_.pop_back();
             auto path = prefix_ + userPath;
-            this->rc_[path]["PUT"].push_back(groupGlobalHandler_);
+            if(this->groupGlobalHandler_ != nullptr)
+                this->rc_[path]["PUT"].push_back(groupGlobalHandler_);
             this->addHandler(path, "PUT", args...);
         }
 
@@ -100,7 +106,8 @@ namespace vogro {
             if (prefix_.back() == '/')
                 prefix_.pop_back();
             auto path = prefix_ + userPath;
-            this->rc_[path]["DELETE"].push_back(groupGlobalHandler_);
+            if (this->groupGlobalHandler_ != nullptr)
+                this->rc_[path]["DELETE"].push_back(groupGlobalHandler_);
             this->addHandler(path, "DELETE", args...);
         }
     };
@@ -370,6 +377,11 @@ namespace vogro {
                     new vogro::Group(prefix, user_resource, handler));
         }
 
+        std::shared_ptr<vogro::Group>
+        makeGroup(std::string prefix){
+            return std::shared_ptr<vogro::Group>(new vogro::Group(prefix, user_resource));
+        };
+    
         void onError(
                 unsigned short code,
                 std::function<void(vogro::Request &, vogro::Response &)> handler) {

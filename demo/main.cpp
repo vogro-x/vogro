@@ -124,6 +124,12 @@ int main() {
         ctx.response->addBody("hello");
     });
 
+    auto g=server.makeGroup("/group");
+    {
+        g->Get("/get",[](vogro::Context & ctx){
+            ctx.response->addBody("/group/get");
+        });
+    }
     server.run();
     return 0;
 }
