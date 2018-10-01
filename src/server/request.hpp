@@ -95,32 +95,32 @@ namespace vogro {
 
         void setProtocol(const std::string &protoc) { this->protocol = protoc; }
 
-        std::string getHeader(std::string key) {
+        std::string getHeader(const std::string &key) {
             auto got = this->headers.find(key);
             return (got == this->headers.end()) ? "" : got->second;
         }
 
         std::unordered_map<std::string, std::string> getHeaders() { return this->headers; }
 
-        void addHeader(std::string key, std::string val) { this->headers[key] = val; }
+        void addHeader(const std::string & key, const std::string &val) { this->headers[key] = val; }
 
-        void setPathParam(std::map<std::string, std::string> &pathParam) { this->pathParam = pathParam; }
+        void setPathParam(const std::map<std::string, std::string> &pathParam) { this->pathParam = pathParam; }
 
-        std::string getPathParam(std::string key) {
+        std::string getPathParam(const std::string & key) {
             auto got = this->pathParam.find(key);
             return (got == this->pathParam.end()) ? "" : got->second;
         }
 
-        void setQueryParam(std::string queryString) { this->queryParam = split_query_string(queryString); }
+        void setQueryParam(const std::string & queryString) { this->queryParam = split_query_string(queryString); }
 
-        std::string getQueryParam(std::string key) {
+        std::string getQueryParam(const std::string & key) {
             auto got = this->queryParam.find(key);
             return (got == this->queryParam.end()) ? "" : got->second;
         }
 
-        void setFormParam(std::string formData) { this->formParam = split_query_string(formData); }
+        void setFormParam(const std::string & formData) { this->formParam = split_query_string(formData); }
 
-        std::string getFormParam(std::string key) {
+        std::string getFormParam(const std::string &key) {
             auto got = this->formParam.find(key);
             return (got == this->formParam.end()) ? "" : got->second;
         }
@@ -145,7 +145,7 @@ namespace vogro {
 
         // const pt::ptree& GetJsonTree() { return this->jsonTree; }
 
-        std::string getCookie(std::string key = "") {
+        std::string getCookie(const std::string & key = "") {
             auto cookieString = this->getHeader("Cookie");
             if (key == "" || cookieString == "")
                 return cookieString;

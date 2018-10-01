@@ -18,6 +18,7 @@
 
 #include "request.hpp"
 #include "response.hpp"
+#include "json.hpp"
 
 namespace vogro {
 
@@ -35,7 +36,7 @@ namespace vogro {
         std::shared_ptr<Request> request;
         std::shared_ptr<Response> response;
 
-        Context(std::shared_ptr<Request> req, std::shared_ptr<Response> res,
+        Context(const std::shared_ptr<Request> req, const std::shared_ptr<Response> res,
                 const std::vector<std::function<void(vogro::Context &)>> &global,
                 const std::vector<std::function<void(vogro::Context &)>> &local)
                 : request(req), response(res), g(global), l(local) {
@@ -58,14 +59,37 @@ namespace vogro {
         }
 
 
-        std::string getValue(const std::string key) {
+        std::string getValue(const std::string &key) {
             auto got = this->values.find(key);
             return (got == this->values.end()) ? "" : got->second;
         }
 
-        void setValue(const std::string key, const std::string val) {
+        void setValue(const std::string &key, const std::string &val) {
             this->values[key] = val;
         }
+
+        nlohmann::json ReadJSON() {
+            return request->ReadJSON();
+        }
+
+        void WriteJSON(const nlohmann::json &j) {
+            response->writeJSON(j);
+        }
+
+        void WriteString(const std::string &bodyString) {
+            response->addBody(bodyString);
+        }
+
+        std::string GetCookie(const std::string & key = ""){
+            return request->getCookie(key);
+        }
+
+        void SetCookie(const std::string & k, const std::string & v, const std::string & path = "/",
+                       bool httpOnly = true, const std::string & maxAge = "", const std::string & domain = "", const std::string &expires = "") {
+            response->setCookie(k,v,path,httpOnly,maxAge,domain);
+        }
+
+
     };
 }
 

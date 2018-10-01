@@ -20,6 +20,7 @@
 #include <iostream>
 #include <sstream> // std::stringstream
 #include <string>
+#include <fstream>
 #include <unordered_map>
 
 #include "common.hpp"
@@ -142,11 +143,22 @@ namespace vogro {
             this->addBody(j.dump());
         }
 
-        void addBody(const std::string& cnt) { this->body << cnt; }
+        void addBody(const std::string& bodyString) { this->body << bodyString; }
 
-        void renderTemplate(const std::string &html, const vtpl::Environment &env) {
+        void renderStringTemplate(const std::string &html, const vtpl::Environment &env) {
             auto rendred = vtpl::TemplateRender(html, env);
             this->addBody(rendred);
+        }
+
+        void renderFileTemplate(const std::string & filename,const vtpl::Environment& env) {
+            std::ifstream f(filename);
+            if (!f) {
+                std::cout<<filename << " not found"<<std::endl;
+                exit(1);
+            }
+            std::string html((std::istreambuf_iterator<char>(f)),std::istreambuf_iterator<char>());
+            auto rendered = vtpl::TemplateRender(html,env);
+            this->addBody(rendered);
         }
 
         std::stringstream &getResponseBodyStrem() { return body; }
