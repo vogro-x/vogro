@@ -17,15 +17,15 @@ cd vogro/demo && mkdir -p build && cd build && cmake .. &&
 make
 ```
 
-## get start
+## start
 ``` c++
 #include "src/server/http.hpp"
 #include "src/server/context.hpp"
 
 void TestMiddleWare(vogro::Context& ctx) {
-        ctx.response->addBody("hello for middleware<br>");
-        ctx.setValue("key", "value from middleware");
-        ctx.Next();
+    ctx.response->addBody("hello for middleware<br>");
+    ctx.setValue("key", "value from middleware");
+    ctx.Next();
 }
 
 int main() {
@@ -50,5 +50,8 @@ int main() {
 the above code started an http server which have 4 threads, each thread runs an `io_service` object. And the server listens on port `8080`. And It has one route `/` with method `Get`, the handler of this route is a C++ anonymous function, which just return a simple string `hello, vorgo` to clients.
 
 Want to know more ? See [Wiki Page](https://github.com/vogro-x/vogro/wiki).
+
+
+## Help
 
 
