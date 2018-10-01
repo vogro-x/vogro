@@ -153,7 +153,7 @@ namespace vogro {
                   port_(port) {
         }
 
-        void runServer() {
+        void run() {
             for (auto it = user_resource.begin(); it != user_resource.end(); it++)
                 all_resources.push_back(it);
 

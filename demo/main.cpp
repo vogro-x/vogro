@@ -124,6 +124,6 @@ int main() {
         ctx.response->addBody("hello");
     });
 
-    server.runServer();
+    server.run();
     return 0;
 }
