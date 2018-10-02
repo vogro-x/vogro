@@ -50,31 +50,29 @@ namespace vogro {
 
         Logger<TerminalPolicy> &logger = Logger<TerminalPolicy>::getLoggerInstance("vogro.log");
 
-        void addHandler(std::string path, std::string method) {
+        void addHandler(const std::string & path, const std::string & method) {
             logger.LOG_INFO(path, method, "handlers register ok");
         }
 
         template<typename First, typename... Rest>
-        void addHandler(std::string path, std::string method, const First &parm1,
+        void addHandler(const std::string& path, const std::string & method, const First &parm1,
                         const Rest &... parm) {
             this->rc_[path][method].push_back(parm1);
             addHandler(path, method, parm...);
         }
 
     public:
-        Group(std::string prefix, RegistrationCenter &rc,
+        Group(const std::string& prefix, RegistrationCenter &rc,
               const std::function<void(vogro::Context &)> groupGlobalHandler)
                 : prefix_(prefix), rc_(rc), groupGlobalHandler_(groupGlobalHandler) {
         }
 
-        Group(std::string prefix, RegistrationCenter & rc): prefix_(prefix),rc_(rc) {
+        Group(const std::string & prefix, RegistrationCenter & rc): prefix_(prefix),rc_(rc) {
 
         }
 
         template<typename... Args>
-        void Get(std::string userPath, const Args &... args) {
-            if (prefix_.back() == '/')
-                prefix_.pop_back();
+        void Get(const std::string& userPath, const Args &... args) {
             auto path = prefix_ + userPath;
             if (this->groupGlobalHandler_ != nullptr)
                 this->rc_[path]["GET"].push_back(groupGlobalHandler_);
@@ -82,9 +80,7 @@ namespace vogro {
         }
 
         template<typename... Args>
-        void Post(std::string userPath, const Args &... args) {
-            if (prefix_.back() == '/')
-                prefix_.pop_back();
+        void Post(const std::string& userPath, const Args &... args) {
             auto path = prefix_ + userPath;
             if (this ->groupGlobalHandler_ != nullptr)
                 this->rc_[path]["POST"].push_back(groupGlobalHandler_);
@@ -92,9 +88,7 @@ namespace vogro {
         }
 
         template<typename... Args>
-        void Put(std::string userPath, const Args &... args) {
-            if (prefix_.back() == '/')
-                prefix_.pop_back();
+        void Put(const std::string& userPath, const Args &... args) {
             auto path = prefix_ + userPath;
             if(this->groupGlobalHandler_ != nullptr)
                 this->rc_[path]["PUT"].push_back(groupGlobalHandler_);
@@ -102,9 +96,7 @@ namespace vogro {
         }
 
         template<typename... Args>
-        void Delete(std::string userPath, const Args &... args) {
-            if (prefix_.back() == '/')
-                prefix_.pop_back();
+        void Delete(const std::string& userPath, const Args &... args) {
             auto path = prefix_ + userPath;
             if (this->groupGlobalHandler_ != nullptr)
                 this->rc_[path]["DELETE"].push_back(groupGlobalHandler_);
@@ -143,12 +135,12 @@ namespace vogro {
         virtual void accept() {}
 
     private:
-        void addHandler(std::string path, std::string method) {
+        void addHandler(const std::string & path, const std::string &method) {
             logger.LOG_INFO(path, method, "handlers register ok");
         }
 
         template<typename First, typename... Rest>
-        void addHandler(std::string path, std::string method, const First &parm1,
+        void addHandler(const std::string & path, const std::string & method, const First &parm1,
                         const Rest &... parm) {
             this->user_resource[path][method].push_back(parm1);
             addHandler(path, method, parm...);
@@ -345,50 +337,54 @@ namespace vogro {
         }
 
     public:
-        void addRoute(const std::string userPath, const std::string method,
+        void addRoute(const std::string & userPath, const std::string & method,
                       const std::function<void(vogro::Context &)> handler) {
             this->user_resource[userPath][method].push_back(handler);
         }
 
         template<typename... Args>
-        void Get(const std::string userPath, const Args &... args) {
+        void Get(const std::string & userPath, const Args &... args) {
             this->addHandler(userPath, "GET", args...);
         }
 
         template<typename... Args>
-        void Post(const std::string userPath, const Args &... args) {
+        void Post(const std::string & userPath, const Args &... args) {
             this->addHandler(userPath, "POST", args...);
         }
 
         template<typename... Args>
-        void Put(const std::string userPath, const Args &... args) {
+        void Put(const std::string & userPath, const Args &... args) {
             this->addHandler(userPath, "PUT", args...);
         }
 
         template<typename... Args>
-        void Delete(const std::string userPath, const Args &... args) {
+        void Delete(const std::string & userPath, const Args &... args) {
             this->addHandler(userPath, "PUT", args...);
         }
 
         std::shared_ptr<vogro::Group>
-        makeGroup(std::string prefix,
+        makeGroup(std::string && prefix,
                   const std::function<void(vogro::Context &)> &handler) {
+            if (prefix.back() == '/')
+                prefix.pop_back();
             return std::shared_ptr<vogro::Group>(
                     new vogro::Group(prefix, user_resource, handler));
         }
 
         std::shared_ptr<vogro::Group>
-        makeGroup(std::string prefix){
+        makeGroup(std::string && prefix){
+            if (prefix.back() == '/')
+                prefix.pop_back();
             return std::shared_ptr<vogro::Group>(new vogro::Group(prefix, user_resource));
         };
     
         void onError(
                 unsigned short code,
-                std::function<void(vogro::Request &, vogro::Response &)> handler) {
+                std::function<void(vogro::Request &, vogro::Response &)>  handler) {
             this->error_handlers[code] = handler;
         }
 
-        void Use(std::function<void(vogro::Context &)> middleware) {
+        void Use(std::function<void(vogro::Context &)>  middleware) {
             this->globalMiddlewares.push_back(middleware);
         }
     };

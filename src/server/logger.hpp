@@ -49,18 +49,18 @@ private:
     std::unique_ptr <std::ofstream> out_stream;
 
 public:
-    FilePolicy(std::string &f) : filename(f), out_stream(new std::ofstream) {
+    FilePolicy(const std::string &f) : filename(f), out_stream(new std::ofstream) {
         this->open_ostream();
     }
 
-    void open_ostream() override {
+    virtual void open_ostream() override {
         this->out_stream->open(filename,
                                std::ofstream::out | std::ofstream::app);
     }
 
-    void close_ostream() override { this->out_stream->close(); }
+    virtual void close_ostream() override { this->out_stream->close(); }
 
-    void write(const std::string &msg) override {
+    virtual void write(const std::string &msg) override {
         *(this->out_stream) << msg << std::endl;
     }
 
@@ -72,15 +72,15 @@ public:
     // placehold 保持接口一致
     TerminalPolicy(std::string &placehold) {};
 
-    void open_ostream() override {
+    virtual void open_ostream() override {
         // do nothing
     }
 
-    void close_ostream() override {
+    virtual void close_ostream() override {
         // do nothing
     }
 
-    void write(const std::string &msg) override {
+    virtual void write(const std::string &msg) override {
         std::cout << msg << std::endl;
     }
 };
@@ -92,7 +92,7 @@ private:
     unsigned short remote_port;
 
 public:
-    RemotePolicy(std::string &addr) {
+    RemotePolicy(const std::string &addr) {
         auto pos = addr.find_first_of(":");
         this->remote_host = addr.substr(0, pos);
         this->remote_port = atoi(addr.substr(pos + 1).c_str());
@@ -102,15 +102,15 @@ public:
 
     ~RemotePolicy() { this->close_ostream(); }
 
-    void open_ostream() override {
+    virtual void open_ostream() override {
         // do nothing
     }
 
-    void close_ostream() override {
+    virtual void close_ostream() override {
         // do nothing
     }
 
-    void write(const std::string &msg) override {}
+    virtual void write(const std::string &msg) override {}
 };
 
 

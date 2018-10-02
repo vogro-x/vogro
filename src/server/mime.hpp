@@ -143,7 +143,7 @@ public:
 
     MimeTypeMap &operator=(const MimeTypeMap &) = delete;
 
-    std::string getMimeTypeByExt(std::string ext) {
+    std::string getMimeTypeByExt(const std::string & ext) {
         auto got = extMime.find(ext);
         return (got == extMime.end()) ? "" : got->second;
     }

@@ -34,9 +34,9 @@ namespace vogro {
     private:
         int code = 200;
 
-        std::string version= "1.1";
+        std::string version = "1.1";
 
-        std::string phrase="OK";
+        std::string phrase = "OK";
 
         std::unordered_map<std::string, std::string> headers;
 
@@ -67,7 +67,7 @@ namespace vogro {
             this->headers["Content-Type"] = "text/html; charset=utf-8";
         }
 
-        int getCode() { return this->code; }
+        int getCode() const { return this->code; }
 
         void setCode(int code) {
             this->code = code;
@@ -75,16 +75,16 @@ namespace vogro {
             this->phrase = codeMap.getPharseByCode(code);
         }
 
-        void setCode(int code, const std::string & phrase) {
+        void setCode(int code, const std::string &phrase) {
             this->code = code;
             this->phrase = phrase;
         }
 
-        void setPhrase(const std::string & phrase) { this->phrase = phrase; }
+        void setPhrase(const std::string &phrase) { this->phrase = phrase; }
 
-        void addHeader(const std::string & key, const std::string & val) { this->headers[key] = val; }
+        void addHeader(const std::string &key, const std::string &val) { this->headers[key] = val; }
 
-        std::string getHeader(std::string key) {
+        std::string getHeader(const std::string &key) const {
             auto got = this->headers.find(key);
             return (got == this->headers.end()) ? "" : got->second;
         }
@@ -109,8 +109,9 @@ namespace vogro {
          **************************************************************************/
 
 
-        void setCookie(const std::string & k, const std::string & v, const std::string & path = "/",
-                bool httpOnly = true, const std::string & maxAge = "", const std::string & domain = "", const std::string &expires = "") {
+        void setCookie(const std::string &k, const std::string &v, const std::string &path = "/",
+                       bool httpOnly = true, const std::string &maxAge = "", const std::string &domain = "",
+                       const std::string &expires = "") {
             std::stringstream ss;
             ss << k << "=" << v;
 
@@ -133,7 +134,7 @@ namespace vogro {
         }
 
 
-        void redirect(const std::string & location, int code = 307) {
+        void redirect(const std::string &location, int code = 307) {
             this->setCode(code);
             this->addHeader("Location", location);
         }
@@ -143,21 +144,21 @@ namespace vogro {
             this->addBody(j.dump());
         }
 
-        void addBody(const std::string& bodyString) { this->body << bodyString; }
+        void addBody(const std::string &bodyString) { this->body << bodyString; }
 
         void renderStringTemplate(const std::string &html, const vtpl::Environment &env) {
             auto rendred = vtpl::TemplateRender(html, env);
             this->addBody(rendred);
         }
 
-        void renderFileTemplate(const std::string & filename,const vtpl::Environment& env) {
+        void renderFileTemplate(const std::string &filename, const vtpl::Environment &env) {
             std::ifstream f(filename);
             if (!f) {
-                std::cout<<filename << " not found"<<std::endl;
+                std::cout << filename << " not found" << std::endl;
                 exit(1);
             }
-            std::string html((std::istreambuf_iterator<char>(f)),std::istreambuf_iterator<char>());
-            auto rendered = vtpl::TemplateRender(html,env);
+            std::string html((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+            auto rendered = vtpl::TemplateRender(html, env);
             this->addBody(rendered);
         }
 
