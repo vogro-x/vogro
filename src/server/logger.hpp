@@ -41,6 +41,8 @@ public:
     virtual void close_ostream() = 0;
 
     virtual void write(const std::string &msg) = 0;
+
+    virtual ~BasePolicy(){}
 };
 
 class FilePolicy : public BasePolicy {
@@ -133,8 +135,7 @@ public:
         if (!p) {
             p = std::shared_ptr<policy_type>(
                     new policy_type(this->filename_or_addr));
-            std::string t = typeid(decltype(*p)).name();
-            if (t == "14TerminalPolicy") {
+            if (typeid(TerminalPolicy) == typeid(*p)) {
                 this->is_terminal = true;
             }
         }
