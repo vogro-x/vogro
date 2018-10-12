@@ -104,14 +104,9 @@ private:
         extMime["msi"] = "application/octet-stream";
         extMime["msp"] = "application/octet-stream";
         extMime["msm"] = "application/octet-stream";
-        extMime["docx"] =
-                "application/"
-                "vnd.openxmlformats-officedocument.wordprocessingml.document";
-        extMime["xlsx"] =
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-        extMime["pptx"] =
-                "application/"
-                "vnd.openxmlformats-officedocument.presentationml.presentation";
+        extMime["docx"] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        extMime["xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        extMime["pptx"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
         extMime["mid"] = "audio/midi";
         extMime["midi"] = "audio/midi";
         extMime["kar"] = "audio/midi";

@@ -17,7 +17,8 @@
 #define _BASE_SERVER_HPP_
 
 #include <boost/asio.hpp>
-#include <boost/bind.hpp>
+#include <boost/asio/ssl.hpp>
+
 
 #include <iostream>
 #include <string>
@@ -25,7 +26,6 @@
 #include <unordered_map>
 #include <vector>
 #include <typeinfo>
-#include <boost/asio/ssl.hpp>
 #include <functional>
 
 #include "../utils.hpp"
@@ -36,6 +36,7 @@
 #include "static.hpp"
 #include "default_error_handler.hpp"
 #include "logo.hpp"
+#include "websocket.hpp"
 
 namespace vogro {
 
@@ -46,33 +47,33 @@ namespace vogro {
     private:
         std::string prefix_;
         RegistrationCenter &rc_;
-        const std::function<void(vogro::Context &)> groupGlobalHandler_= nullptr;
+        const std::function<void(vogro::Context &)> groupGlobalHandler_ = nullptr;
 
         Logger<TerminalPolicy> &logger = Logger<TerminalPolicy>::getLoggerInstance("vogro.log");
 
-        void addHandler(const std::string & path, const std::string & method) {
+        void addHandler(const std::string &path, const std::string &method) {
             logger.LOG_INFO(path, method, "handlers register ok");
         }
 
         template<typename First, typename... Rest>
-        void addHandler(const std::string& path, const std::string & method, const First &parm1,
+        void addHandler(const std::string &path, const std::string &method, const First &parm1,
                         const Rest &... parm) {
             this->rc_[path][method].push_back(parm1);
             addHandler(path, method, parm...);
         }
 
     public:
-        Group(const std::string& prefix, RegistrationCenter &rc,
+        Group(const std::string &prefix, RegistrationCenter &rc,
               const std::function<void(vogro::Context &)> groupGlobalHandler)
                 : prefix_(prefix), rc_(rc), groupGlobalHandler_(groupGlobalHandler) {
         }
 
-        Group(const std::string & prefix, RegistrationCenter & rc): prefix_(prefix),rc_(rc) {
+        Group(const std::string &prefix, RegistrationCenter &rc) : prefix_(prefix), rc_(rc) {
 
         }
 
         template<typename... Args>
-        void Get(const std::string& userPath, const Args &... args) {
+        void Get(const std::string &userPath, const Args &... args) {
             auto path = prefix_ + userPath;
             if (this->groupGlobalHandler_ != nullptr)
                 this->rc_[path]["GET"].push_back(groupGlobalHandler_);
@@ -80,23 +81,23 @@ namespace vogro {
         }
 
         template<typename... Args>
-        void Post(const std::string& userPath, const Args &... args) {
+        void Post(const std::string &userPath, const Args &... args) {
             auto path = prefix_ + userPath;
-            if (this ->groupGlobalHandler_ != nullptr)
+            if (this->groupGlobalHandler_ != nullptr)
                 this->rc_[path]["POST"].push_back(groupGlobalHandler_);
             this->addHandler(path, "POST", args...);
         }
 
         template<typename... Args>
-        void Put(const std::string& userPath, const Args &... args) {
+        void Put(const std::string &userPath, const Args &... args) {
             auto path = prefix_ + userPath;
-            if(this->groupGlobalHandler_ != nullptr)
+            if (this->groupGlobalHandler_ != nullptr)
                 this->rc_[path]["PUT"].push_back(groupGlobalHandler_);
             this->addHandler(path, "PUT", args...);
         }
 
         template<typename... Args>
-        void Delete(const std::string& userPath, const Args &... args) {
+        void Delete(const std::string &userPath, const Args &... args) {
             auto path = prefix_ + userPath;
             if (this->groupGlobalHandler_ != nullptr)
                 this->rc_[path]["DELETE"].push_back(groupGlobalHandler_);
@@ -121,9 +122,6 @@ namespace vogro {
         RegistrationCenter user_resource;
         RegistrationCenter vogro_resource;
 
-        boost::asio::streambuf request_;
-        boost::asio::streambuf response_;
-
         std::function<void(vogro::Request &, vogro::Response &)> default_error_handler = DefaultErrorHandler;
         std::unordered_map<unsigned short,
                 std::function<void(vogro::Request &, vogro::Response &)>> error_handlers;
@@ -135,12 +133,12 @@ namespace vogro {
         virtual void accept() {}
 
     private:
-        void addHandler(const std::string & path, const std::string &method) {
+        void addHandler(const std::string &path, const std::string &method) {
             logger.LOG_INFO(path, method, "handlers register ok");
         }
 
         template<typename First, typename... Rest>
-        void addHandler(const std::string & path, const std::string & method, const First &parm1,
+        void addHandler(const std::string &path, const std::string &method, const First &parm1,
                         const Rest &... parm) {
             this->user_resource[path][method].push_back(parm1);
             addHandler(path, method, parm...);
@@ -151,6 +149,19 @@ namespace vogro {
                 : endpoint(boost::asio::ip::tcp::v4(), port), acceptor(io_svc, endpoint), thread_num(num_threads),
                   port_(port) {
         }
+
+//        void InitLogger(std::string &&policy = "terminal", std::string &&level = "debug", std::string &&target = "placeholder") {
+//            if(policy == "terminal") {
+//                logger = Logger<TerminalPolicy>::getLoggerInstance(target);
+//            }else if(policy == "remote") {
+//                logger = Logger<RemotePolicy>::getLoggerInstance(target);
+//            }else if(policy == "file") {
+//                logger = Logger<FilePolicy>::getLoggerInstance(target);
+//            }else{
+//                std::cout<<"InitLogger error"<<std::endl;
+//                exit(1);
+//            }
+//        }
 
         void run() {
             for (auto it = user_resource.begin(); it != user_resource.end(); it++)
@@ -189,29 +200,25 @@ namespace vogro {
                                                   std::istream stream(read_buffer.get());
 
                                                   auto request = std::make_shared<vogro::Request>();
+                                                  *request = parse_request(stream);
 
                                                   request->setRemoteIP(
                                                           socket->lowest_layer().remote_endpoint().address().to_string());
                                                   request->setRemotePort(
                                                           socket->lowest_layer().remote_endpoint().port());
 
-                                                  *request = parse_request(stream);
-
                                                   size_t num_additional_bytes = total - bytes_transferred;
-                                                  if (request->getHeader("Content-Length") != "") {
-                                                      auto remainBodyLength =
-                                                              std::stoull(request->getHeader("Content-Length")) -
-                                                              num_additional_bytes;
+                                                  std::string content_length_header = request->getHeader("Content-Length"); 
+                                                  if (content_length_header != "") {
+                                                      auto content_length = std::stoull(content_length_header); 
+                                                      auto remain_body_length =content_length - num_additional_bytes;
                                                       boost::asio::async_read(*socket, *read_buffer,
-                                                                              boost::asio::transfer_exactly(
-                                                                                      remainBodyLength),
+                                                                              boost::asio::transfer_exactly(remain_body_length),
                                                                               [this, socket, read_buffer, request](
                                                                                       const boost::system::error_code &ec,
                                                                                       size_t bytes_transferred) {
                                                                                   if (!ec) {
-                                                                                      request->setBody(
-                                                                                              std::shared_ptr<std::istream>(
-                                                                                                      new std::istream(
+                                                                                      request->setBody(std::shared_ptr<std::istream>(new std::istream(
                                                                                                               read_buffer.get())));
                                                                                       respond(socket, request);
                                                                                   }
@@ -337,33 +344,33 @@ namespace vogro {
         }
 
     public:
-        void addRoute(const std::string & userPath, const std::string & method,
+        void addRoute(const std::string &userPath, const std::string &method,
                       const std::function<void(vogro::Context &)> handler) {
             this->user_resource[userPath][method].push_back(handler);
         }
 
         template<typename... Args>
-        void Get(const std::string & userPath, const Args &... args) {
+        void Get(const std::string &userPath, const Args &... args) {
             this->addHandler(userPath, "GET", args...);
         }
 
         template<typename... Args>
-        void Post(const std::string & userPath, const Args &... args) {
+        void Post(const std::string &userPath, const Args &... args) {
             this->addHandler(userPath, "POST", args...);
         }
 
         template<typename... Args>
-        void Put(const std::string & userPath, const Args &... args) {
+        void Put(const std::string &userPath, const Args &... args) {
             this->addHandler(userPath, "PUT", args...);
         }
 
         template<typename... Args>
-        void Delete(const std::string & userPath, const Args &... args) {
+        void Delete(const std::string &userPath, const Args &... args) {
             this->addHandler(userPath, "PUT", args...);
         }
 
         std::shared_ptr<vogro::Group>
-        makeGroup(std::string && prefix,
+        makeGroup(std::string &&prefix,
                   const std::function<void(vogro::Context &)> &handler) {
             if (prefix.back() == '/')
                 prefix.pop_back();
@@ -372,19 +379,19 @@ namespace vogro {
         }
 
         std::shared_ptr<vogro::Group>
-        makeGroup(std::string && prefix){
+        makeGroup(std::string &&prefix) {
             if (prefix.back() == '/')
                 prefix.pop_back();
             return std::shared_ptr<vogro::Group>(new vogro::Group(prefix, user_resource));
         };
-    
+
         void onError(
                 unsigned short code,
-                std::function<void(vogro::Request &, vogro::Response &)>  handler) {
+                std::function<void(vogro::Request &, vogro::Response &)> handler) {
             this->error_handlers[code] = handler;
         }
 
-        void Use(std::function<void(vogro::Context &)>  middleware) {
+        void Use(std::function<void(vogro::Context &)> middleware) {
             this->globalMiddlewares.push_back(middleware);
         }
     };

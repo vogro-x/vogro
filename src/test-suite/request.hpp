@@ -24,7 +24,7 @@
 #include <sstream>
 #include <string>
 
-using boost::asio::ip::tcp;
+using namespace boost::asio;
 
 namespace vogro {
 
@@ -45,7 +45,7 @@ namespace vogro {
 
         // std::stringstream body_stream;
         std::string body;
-        std::shared_ptr <boost::asio::ip::tcp::socket> &socket;
+        std::shared_ptr <ip::tcp::socket> &socket;
 
         std::string getFinalPath() {
             std::stringstream pathStream;
@@ -56,8 +56,8 @@ namespace vogro {
                 pathStream << "?";
             }
 
-            for (auto it = queryParams.begin(); it != queryParams.end(); it++)
-                pathStream << it->first << "=" << it->second << "&";
+            for (auto it : queryParams)
+                pathStream << it.first << "=" << it.second << "&";
 
             auto finalPath = pathStream.str();
             if (finalPath.back() == '&')
@@ -69,10 +69,10 @@ namespace vogro {
         std::string get_real_path(const std::string &originPath,
                                   const std::map <std::string, std::string> &pathParam) {
             auto length = originPath.length();
-            std::string realPath = "";
+            std::string realPath;
             for (int i = 0; i < length; i++) {
                 if (originPath[i] == '{') {
-                    std::string key = "";
+                    std::string key;
                     for (int j = i + 1; j < length; j++) {
                         if (originPath[j] == '}') {
                             auto got = pathParam.find(key);

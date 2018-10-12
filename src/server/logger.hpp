@@ -55,14 +55,14 @@ public:
         this->open_ostream();
     }
 
-    virtual void open_ostream() override {
+    void open_ostream() override {
         this->out_stream->open(filename,
                                std::ofstream::out | std::ofstream::app);
     }
 
-    virtual void close_ostream() override { this->out_stream->close(); }
+    void close_ostream() override { this->out_stream->close(); }
 
-    virtual void write(const std::string &msg) override {
+    void write(const std::string &msg) override {
         *(this->out_stream) << msg << std::endl;
     }
 
@@ -74,15 +74,15 @@ public:
     // placehold 保持接口一致
     TerminalPolicy(std::string &placehold) {};
 
-    virtual void open_ostream() override {
+    void open_ostream() override {
         // do nothing
     }
 
-    virtual void close_ostream() override {
+    void close_ostream() override {
         // do nothing
     }
 
-    virtual void write(const std::string &msg) override {
+    void write(const std::string &msg) override {
         std::cout << msg << std::endl;
     }
 };
@@ -104,15 +104,15 @@ public:
 
     ~RemotePolicy() { this->close_ostream(); }
 
-    virtual void open_ostream() override {
+    void open_ostream() override {
         // do nothing
     }
 
-    virtual void close_ostream() override {
+    void close_ostream() override {
         // do nothing
     }
 
-    virtual void write(const std::string &msg) override {}
+    void write(const std::string &msg) override {}
 };
 
 

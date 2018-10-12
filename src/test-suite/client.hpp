@@ -22,7 +22,7 @@
 #include <iostream>
 #include <string>
 
-using boost::asio::ip::tcp;
+using namespace boost::asio;
 
 namespace vogro {
 
@@ -30,22 +30,21 @@ namespace vogro {
     private:
         std::string serverIP;
         std::string serverPort;
-        boost::asio::io_service ios;
-        std::shared_ptr <boost::asio::ip::tcp::socket> socket =
-                std::make_shared<boost::asio::ip::tcp::socket>(ios);
+        io_service ios;
+        std::shared_ptr <ip::tcp::socket> socket = std::make_shared<ip::tcp::socket>(ios);
 
     public:
         VogroTestClient(const std::string &ip, const ::std::string &port) : serverIP(ip), serverPort(port) {
 
-            boost::asio::ip::tcp::resolver::query resolver_query(this->serverIP, this->serverPort,
-                                                                 boost::asio::ip::tcp::resolver::query::numeric_service);
+            ip::tcp::resolver::query resolver_query(this->serverIP, this->serverPort,
+                    ip::tcp::resolver::query::numeric_service);
 
-            boost::asio::ip::tcp::resolver resolver(ios);
+            ip::tcp::resolver resolver(ios);
 
             try {
-                boost::asio::ip::tcp::resolver::iterator it = resolver.resolve(resolver_query);
-                boost::asio::connect(*socket, it);
-            } catch (boost::system::system_error &e) {
+                ip::tcp::resolver::iterator it = resolver.resolve(resolver_query);
+                connect(*socket, it);
+            } catch (const boost::system::system_error &e) {
                 std::cout << e.what() << std::endl;
             }
         }

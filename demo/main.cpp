@@ -9,6 +9,7 @@
 
 int main() {
     vogro::Server server(8080, 4);
+    // server.InitLogger("file","debug","hhh.log");
     // vogro::Server server(8080,4,"../cert/server.crt","../cert/server.key");
 
     server.Use(TestMiddleWare1);
