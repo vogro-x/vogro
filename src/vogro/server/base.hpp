@@ -196,46 +196,43 @@ namespace vogro {
 
             auto read_buffer = std::make_shared<boost::asio::streambuf>();
             boost::asio::async_read_until(*socket, *read_buffer, "\r\n\r\n",
-                                          [this, socket, read_buffer](const boost::system::error_code &ec,
-                                                                      size_t bytes_transferred) {
-                                              if (!ec) {
-                                                  size_t total = read_buffer->size();
+              [this, socket, read_buffer](const boost::system::error_code &ec,
+                                          size_t bytes_transferred) {
+                  if (!ec) {
+                      size_t total = read_buffer->size();
 
-                                                  std::istream stream(read_buffer.get());
+                      std::istream stream(read_buffer.get());
 
-                                                  auto request = std::make_shared<vogro::Request>();
-                                                  *request = parse_request(stream);
+                      auto request = std::make_shared<vogro::Request>();
+                      *request = parse_request(stream);
 
-                                                  request->setRemoteIP(
-                                                          socket->lowest_layer().remote_endpoint().address().to_string());
-                                                  request->setRemotePort(
-                                                          socket->lowest_layer().remote_endpoint().port());
+                      request->setRemoteIP(
+                              socket->lowest_layer().remote_endpoint().address().to_string());
+                      request->setRemotePort(
+                              socket->lowest_layer().remote_endpoint().port());
 
-                                                  size_t num_additional_bytes = total - bytes_transferred;
-                                                  std::string content_length_header = request->getHeader(
-                                                          "Content-Length");
-                                                  if (content_length_header != "") {
-                                                      auto content_length = std::stoull(content_length_header);
-                                                      auto remain_body_length = content_length - num_additional_bytes;
-                                                      boost::asio::async_read(*socket, *read_buffer,
-                                                                              boost::asio::transfer_exactly(
-                                                                                      remain_body_length),
-                                                                              [this, socket, read_buffer, request](
-                                                                                      const boost::system::error_code &ec,
-                                                                                      size_t bytes_transferred) {
-                                                                                  if (!ec) {
-                                                                                      request->setBody(
-                                                                                              std::shared_ptr<std::istream>(
-                                                                                                      new std::istream(
-                                                                                                              read_buffer.get())));
-                                                                                      respond(socket, request);
-                                                                                  }
-                                                                              });
-                                                  } else {
-                                                      respond(socket, request);
-                                                  }
-                                              }
-                                          });
+                      size_t num_additional_bytes = total - bytes_transferred;
+                      std::string content_length_header = request->getHeader(
+                              "Content-Length");
+                      if (content_length_header != "") {
+                          auto content_length = std::stoull(content_length_header);
+                          auto remain_body_length = content_length - num_additional_bytes;
+                          boost::asio::async_read(*socket, *read_buffer,
+                                  boost::asio::transfer_exactly(remain_body_length),
+                                  [this, socket, read_buffer, request](
+                                          const boost::system::error_code &ec,
+                                          size_t bytes_transferred) {
+                                      if (!ec) {
+                                          request->setBody(std::shared_ptr<std::istream>(
+                                                          new std::istream(read_buffer.get())));
+                                          respond(socket, request);
+                                      }
+                          });
+                      } else {
+                          respond(socket, request);
+                      }
+                  }
+            });
         }
 
     private:
