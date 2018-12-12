@@ -1,0 +1,4 @@
+/home/andrew/Code/vogro/demo/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/andrew/Code/vogro/demo/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/andrew/Code/vogro/demo/cmake-build-debug/CMakeFiles/testClient.dir
+/home/andrew/Code/vogro/demo/cmake-build-debug/CMakeFiles/vogroServer.dir

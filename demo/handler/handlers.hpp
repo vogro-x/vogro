@@ -1,4 +1,5 @@
-#include "../../src/server/context.hpp"
+#include "vogro/server/context.hpp"
+
 
 void TestHandler1(vogro::Context& ctx)
 {

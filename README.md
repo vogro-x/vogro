@@ -18,33 +18,117 @@ make
 ```
 
 ## start
-``` c++
-#include "src/server/http.hpp"
-#include "src/server/context.hpp"
 
-void TestMiddleWare(vogro::Context& ctx) {
-    ctx.response->addBody("hello for middleware<br>");
-    ctx.setValue("key", "value from middleware");
+### the server part code
+``` c++
+#include "vogro/server/http.hpp"
+#include "vogro/server/context.hpp"
+
+void GlobalMiddleWare(vogro::Context &ctx) {
+    ctx.response->addBody("hello for global middleware<br>");
+    ctx.setValue("key", "value from global middleware");
     ctx.Next();
 }
 
-int main() {
+void GroupMiddleWare(vogro::Context &ctx) {
+    ctx.response->addBody("hello for group middleware<br>");
+    ctx.Next();
+}
+
+void TestHandler1(vogro::Context &ctx) {
+    ctx.response->addBody("hello from handler1<br>");
+    ctx.Next();
+}
+
+void TestHandler2(vogro::Context &ctx) {
+    ctx.response->addBody("hello from handler2<br>");
+    ctx.Next();
+}
+
+void TestHandler3(vogro::Context &ctx) {
+    ctx.response->addBody("hello from handler3<br>");
+}
+
+int main(int argc, char **argv) {
 
     vogro::Server server(8080, 4);
 
-    server.Use(TestMiddleWare1); 
+    server.Use(GlobalMiddleWare);
 
     server.addRoute("/", "GET", [](vogro::Context &ctx) {
         ctx.response->addBody("hello, vogro<br>");
-
         auto val = ctx.getValue("key");
+        ctx.response->addBody(val);
+    });
 
-        ctx->response->addBody(val);
-        
+    server.Get("/hello/{str:name}/{int:age}/", [](vogro::Context &ctx) {
+        auto name = ctx.request->getPathParam("name");
+        auto age = ctx.request->getPathParam("age");
+
+        std::stringstream msg_string;
+        msg_string << "hello " << name << ", you are " << age << "years old.";
+
+        ctx.response->addBody(msg_string.str());
+    });
+
+    auto methodGroup = server.makeGroup("/method/", GroupMiddleWare);
+    {
+        methodGroup->Get("/get/", TestHandler1, TestHandler2, TestHandler3);
+
+        methodGroup->Post("/post/", [](vogro::Context &ctx) {
+            ctx.response->addBody("post");
+        });
+
+        methodGroup->Put("/put/", [](vogro::Context &ctx) {
+            ctx.response->addBody("put");
+        });
+
+        methodGroup->Delete("/delete/", [](vogro::Context &ctx) {
+            ctx.response->addBody("delete");
+        });
+    }
+
+    server.Post("/json/", [](vogro::Context &ctx) {
+        auto json = ctx.request->ReadJSON();
+        auto name = json.at("name").get<std::string>();
+        ctx.response->addBody(name);
+    });
+
+    server.onError(404, [](vogro::Request &request, vogro::Response &response) {
+        response.addBody("Custom Not Found");
         return;
     });
 
     server.run();
+}
+```
+
+### the test part code
+``` c++
+#include "vogro/test-suite/client.hpp"
+
+int main() {
+    vogro::VogroTestClient client("127.0.0.1", "8080");
+
+    client.Get("/").Expect().Body().Contains("value from global middleware");
+
+    client.Get("/hello/{name}/{age}/").withPath("name", "Andrewpqc").withPath("age", "22").
+            Expect().Body().Equal("hello Andrewpqc, you are 22 years old.");
+
+    client.Get("/method/get/").Expect().Body().Contains("get");
+
+    client.Post("/method/post/").Expect().Body().Contains("post");
+
+    client.Put("/method/put/").Expect().Body().Contains("put");
+
+    client.Delete("/method/delete").Expect().Body().Contains("delete");
+
+    client.Post("/json/").withJSON("{\"name\":\"Andrewpqc\"}").Expect().
+            Body().Contains("Andrewpqc");
+
+    client.Get("/not/found/").Expect().Body().Equal("Custom Not Found");
+
+    return 0;
 }
 ```
 the above code started an http server which have 4 threads, each thread runs an `io_service` object. And the server listens on port `8080`. And It has one route `/` with method `Get`, the handler of this route is a C++ anonymous function, which just return a simple string `hello, vorgo` to clients.
@@ -53,6 +137,6 @@ Want to know more ? See [Wiki Page](https://github.com/vogro-x/vogro/wiki).
 
 
 ## help
-vogro needs a full-feature static server for large file tranfer and we also need websocket support. So, if you want to imporve vogro, please pull request to this project. 
+vogro needs a full-feature static server for large file tranfer and we also need websocket support. So, if you want to imporve vogro, please pull request to this project.
 
 

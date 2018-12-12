@@ -1,11 +1,11 @@
-#include "./handler/handlers.hpp"
-#include "./middleware/middleware.hpp"
+#include "handler/handlers.hpp"
+#include "middleware/middleware.hpp"
 
-#include "../src/server/http.hpp"
-#include "../src/server/json.hpp" // for start http server
-// #include "../src/server/https.hpp" //for start https server
+#include "vogro/server/http.hpp"
+#include "vogro/server/json.hpp" // for start http server
+// #include "vogro/server/https.hpp" //for start https server
 
-#include "../src/server/template_engine.hpp"
+#include "vogro/server/template_engine.hpp"
 
 int main() {
     vogro::Server server(8080, 4);

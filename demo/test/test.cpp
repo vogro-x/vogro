@@ -1,13 +1,13 @@
 
-#include "../../src/test-suite/client.hpp"
+#include "vogro/test-suite/client.hpp"
 
 //1.3 ms pre request ----> sync client 
 int main(void) {
     vogro::VogroTestClient client("127.0.0.1", "8080");
 
-    for (int i = 0; i < 100; i++) {
+//    for (int i = 0; i < 100; i++) {
 
-        client.Get("/").Expect().Body().Contains("Index");
+        client.Get("/").Expect().Status(200).Body().Contains("Index");
 
         client.Get("/username/{name}").withPath("name","Andrewpqc").Expect().
             Body().Contains("Andrewpqc");
@@ -32,6 +32,6 @@ int main(void) {
 
         client.Post("/a/post/").withJSON("{\"name\":\"Andrewpqc\"}").Expect().Body().Contains("Andrewpqc");
 
-    }
+//    }
     return 0;
 }

@@ -1,4 +1,4 @@
-#include "../../src/server/context.hpp"
+#include "vogro/server/context.hpp"
 
 void TestMiddleWare1(vogro::Context& ctx) {
         std::cout << "hello from middleware1" << std::endl;

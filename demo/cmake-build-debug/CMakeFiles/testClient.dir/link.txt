@@ -1,0 +1,1 @@
+/usr/bin/c++  -g  -rdynamic CMakeFiles/testClient.dir/test/test.cpp.o  -o testClient  -L/usr/local/lib -Wl,-rpath,/usr/local/lib -lpthread -lboost_system 
