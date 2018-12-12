@@ -25,10 +25,10 @@ namespace vogro {
     class Context {
 
     private:
-        const std::vector<std::function<void(vogro::Context &)>> &g;
-        const std::vector<std::function<void(vogro::Context &)>> &l;
+        const std::vector<std::function<void(vogro::Context &)> > &g;
+        const std::vector<std::function<void(vogro::Context &)> > &l;
 
-        std::vector<std::function<void(vogro::Context &)>>::const_iterator currentHandler = g.begin();
+        std::vector<std::function<void(vogro::Context &)> >::const_iterator currentHandler = g.begin();
 
         std::map<std::string, std::string> values;
 
@@ -36,11 +36,12 @@ namespace vogro {
         std::shared_ptr<Request> request;
         std::shared_ptr<Response> response;
 
-        Context(const std::shared_ptr<Request> req, const std::shared_ptr<Response> res,
+        Context(
+                const std::shared_ptr<Request> req,
+                const std::shared_ptr<Response> res,
                 const std::vector<std::function<void(vogro::Context &)>> &global,
-                const std::vector<std::function<void(vogro::Context &)>> &local)
-                : request(req), response(res), g(global), l(local) {
-        }
+                const std::vector<std::function<void(vogro::Context &)>> &local
+        ) : request(req), response(res), g(global), l(local) {}
 
         void Next() {
             currentHandler++;
@@ -80,13 +81,14 @@ namespace vogro {
             response->addBody(bodyString);
         }
 
-        std::string GetCookie(const std::string & key = ""){
+        std::string GetCookie(const std::string &key = "") {
             return request->getCookie(key);
         }
 
-        void SetCookie(const std::string & k, const std::string & v, const std::string & path = "/",
-                       bool httpOnly = true, const std::string & maxAge = "", const std::string & domain = "", const std::string &expires = "") {
-            response->setCookie(k,v,path,httpOnly,maxAge,domain);
+        void SetCookie(const std::string &k, const std::string &v, const std::string &path = "/",
+                       bool httpOnly = true, const std::string &maxAge = "", const std::string &domain = "",
+                       const std::string &expires = "") {
+            response->setCookie(k, v, path, httpOnly, maxAge, domain);
         }
 
 

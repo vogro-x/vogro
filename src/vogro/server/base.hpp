@@ -39,6 +39,8 @@
 
 namespace vogro {
 
+
+    /*url , method, handlers*/
     typedef std::map<std::string, std::unordered_map<std::string,
             std::vector<std::function<void(vogro::Context &)>>>> RegistrationCenter;
 
@@ -49,6 +51,7 @@ namespace vogro {
         const std::function<void(vogro::Context &)> groupGlobalHandler_ = nullptr;
 
         Logger<TerminalPolicy> &logger = Logger<TerminalPolicy>::getLoggerInstance("vogro.log");
+
 
         void addHandler(const std::string &path, const std::string &method) {
             logger.LOG_INFO(path, method, "handlers register ok");
@@ -62,44 +65,54 @@ namespace vogro {
         }
 
     public:
-        Group(const std::string &prefix, RegistrationCenter &rc,
-              const std::function<void(vogro::Context &)> groupGlobalHandler)
-                : prefix_(prefix), rc_(rc), groupGlobalHandler_(groupGlobalHandler) {
-        }
+        Group(
+                const std::string &prefix,
+                RegistrationCenter &rc,
+                const std::function<void(vogro::Context &)> groupGlobalHandler
+        ) : prefix_(prefix), rc_(rc), groupGlobalHandler_(groupGlobalHandler) {}
 
-        Group(const std::string &prefix, RegistrationCenter &rc) : prefix_(prefix), rc_(rc) {
-
-        }
+        Group(
+                const std::string &prefix,
+                RegistrationCenter &rc
+        ) : prefix_(prefix), rc_(rc) {}
 
         template<typename... Args>
         void Get(const std::string &userPath, const Args &... args) {
             auto path = prefix_ + userPath;
+
             if (this->groupGlobalHandler_ != nullptr)
                 this->rc_[path]["GET"].push_back(groupGlobalHandler_);
+
             this->addHandler(path, "GET", args...);
         }
 
         template<typename... Args>
         void Post(const std::string &userPath, const Args &... args) {
             auto path = prefix_ + userPath;
+
             if (this->groupGlobalHandler_ != nullptr)
                 this->rc_[path]["POST"].push_back(groupGlobalHandler_);
+
             this->addHandler(path, "POST", args...);
         }
 
         template<typename... Args>
         void Put(const std::string &userPath, const Args &... args) {
             auto path = prefix_ + userPath;
+
             if (this->groupGlobalHandler_ != nullptr)
                 this->rc_[path]["PUT"].push_back(groupGlobalHandler_);
+
             this->addHandler(path, "PUT", args...);
         }
 
         template<typename... Args>
         void Delete(const std::string &userPath, const Args &... args) {
             auto path = prefix_ + userPath;
+
             if (this->groupGlobalHandler_ != nullptr)
                 this->rc_[path]["DELETE"].push_back(groupGlobalHandler_);
+
             this->addHandler(path, "DELETE", args...);
         }
     };
@@ -121,9 +134,12 @@ namespace vogro {
         RegistrationCenter user_resource;
         RegistrationCenter vogro_resource;
 
-        std::function<void(vogro::Request &, vogro::Response &)> default_error_handler = DefaultErrorHandler;
+        std::function<void(vogro::Request &, vogro::Response &)
+                > default_error_handler = DefaultErrorHandler;
+
         std::unordered_map<unsigned short,
-                std::function<void(vogro::Request &, vogro::Response &)>> error_handlers;
+            std::function<void(vogro::Request &, vogro::Response &)>
+                          > error_handlers;
 
         std::vector<std::function<void(vogro::Context &)>> globalMiddlewares;
 
@@ -145,22 +161,11 @@ namespace vogro {
 
     public:
         ServerBase(unsigned short port, size_t num_threads)
-                : endpoint(boost::asio::ip::tcp::v4(), port), acceptor(io_svc, endpoint), thread_num(num_threads),
-                  port_(port) {
-        }
+                : endpoint(boost::asio::ip::tcp::v4(), port),
+                  acceptor(io_svc, endpoint),
+                  thread_num(num_threads),
+                  port_(port) {}
 
-//        void InitLogger(std::string &&policy = "terminal", std::string &&level = "debug", std::string &&target = "placeholder") {
-//            if(policy == "terminal") {
-//                logger = Logger<TerminalPolicy>::getLoggerInstance(target);
-//            }else if(policy == "remote") {
-//                logger = Logger<RemotePolicy>::getLoggerInstance(target);
-//            }else if(policy == "file") {
-//                logger = Logger<FilePolicy>::getLoggerInstance(target);
-//            }else{
-//                std::cout<<"InitLogger error"<<std::endl;
-//                exit(1);
-//            }
-//        }
 
         void run() {
             for (auto it = user_resource.begin(); it != user_resource.end(); it++)
@@ -207,17 +212,21 @@ namespace vogro {
                                                           socket->lowest_layer().remote_endpoint().port());
 
                                                   size_t num_additional_bytes = total - bytes_transferred;
-                                                  std::string content_length_header = request->getHeader("Content-Length"); 
+                                                  std::string content_length_header = request->getHeader(
+                                                          "Content-Length");
                                                   if (content_length_header != "") {
-                                                      auto content_length = std::stoull(content_length_header); 
-                                                      auto remain_body_length =content_length - num_additional_bytes;
+                                                      auto content_length = std::stoull(content_length_header);
+                                                      auto remain_body_length = content_length - num_additional_bytes;
                                                       boost::asio::async_read(*socket, *read_buffer,
-                                                                              boost::asio::transfer_exactly(remain_body_length),
+                                                                              boost::asio::transfer_exactly(
+                                                                                      remain_body_length),
                                                                               [this, socket, read_buffer, request](
                                                                                       const boost::system::error_code &ec,
                                                                                       size_t bytes_transferred) {
                                                                                   if (!ec) {
-                                                                                      request->setBody(std::shared_ptr<std::istream>(new std::istream(
+                                                                                      request->setBody(
+                                                                                              std::shared_ptr<std::istream>(
+                                                                                                      new std::istream(
                                                                                                               read_buffer.get())));
                                                                                       respond(socket, request);
                                                                                   }
@@ -373,8 +382,7 @@ namespace vogro {
                   const std::function<void(vogro::Context &)> &handler) {
             if (prefix.back() == '/')
                 prefix.pop_back();
-            return std::shared_ptr<vogro::Group>(
-                    new vogro::Group(prefix, user_resource, handler));
+            return std::shared_ptr<vogro::Group>(new vogro::Group(prefix, user_resource, handler));
         }
 
         std::shared_ptr<vogro::Group>
