@@ -214,7 +214,7 @@ namespace vogro {
                       size_t num_additional_bytes = total - bytes_transferred;
                       std::string content_length_header = request->getHeader(
                               "Content-Length");
-                      if (content_length_header != "") {
+                      if (!content_length_header.empty()) {
                           auto content_length = std::stoull(content_length_header);
                           auto remain_body_length = content_length - num_additional_bytes;
                           boost::asio::async_read(*socket, *read_buffer,
@@ -379,14 +379,14 @@ namespace vogro {
                   const std::function<void(vogro::Context &)> &handler) {
             if (prefix.back() == '/')
                 prefix.pop_back();
-            return std::shared_ptr<vogro::Group>(new vogro::Group(prefix, user_resource, handler));
+            return std::make_shared<vogro::Group>(prefix, user_resource, handler);
         }
 
         std::shared_ptr<vogro::Group>
         makeGroup(std::string &&prefix) {
             if (prefix.back() == '/')
                 prefix.pop_back();
-            return std::shared_ptr<vogro::Group>(new vogro::Group(prefix, user_resource));
+            return std::make_shared<vogro::Group>(prefix, user_resource);
         };
 
         void onError(
