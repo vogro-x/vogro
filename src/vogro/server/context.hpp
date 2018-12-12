@@ -25,6 +25,9 @@ namespace vogro {
     class Context {
 
     private:
+        bool is_first_next_call =true;
+        bool in_global = true;
+
         const std::vector<std::function<void(vogro::Context &)> > &g;
         const std::vector<std::function<void(vogro::Context &)> > &l;
 
@@ -44,19 +47,32 @@ namespace vogro {
         ) : request(req), response(res), g(global), l(local) {}
 
         void Next() {
-            currentHandler++;
-            if (currentHandler != g.end()) {
-                (*currentHandler)(*this);
-                return;
-            } else {
-                currentHandler = l.begin();
-                if (currentHandler != l.end()) {
-                    (*currentHandler)(*this);
-                    return;
-                } else {
-                    throw "No Next";
+            if(this->is_first_next_call) {
+                this->is_first_next_call=false;
+                if(currentHandler==g.end()){
+                    currentHandler=l.begin();
+                    in_global=false;
                 }
             }
+
+            currentHandler++;
+            if(in_global){
+               if(currentHandler!=g.end()) {
+                   (*currentHandler)(*this);
+                   return;
+               }else{
+                   currentHandler=l.begin();
+                   in_global=false;
+               }
+           }
+
+           if(!in_global){
+               if(currentHandler!=l.end()){
+                   (*currentHandler)(*this);
+                   return;
+               }
+
+           }
         }
 
 
