@@ -31,13 +31,14 @@ namespace vogro {
         std::string serverIP;
         std::string serverPort;
         io_service ios;
-        std::shared_ptr <ip::tcp::socket> socket = std::make_shared<ip::tcp::socket>(ios);
+        std::shared_ptr<ip::tcp::socket> socket = std::make_shared<ip::tcp::socket>(ios);
 
     public:
-        VogroTestClient(const std::string &ip, const ::std::string &port) : serverIP(ip), serverPort(port) {
+        VogroTestClient(std::string ip, std::string port)
+                : serverIP(std::move(ip)), serverPort(std::move(port)) {
 
             ip::tcp::resolver::query resolver_query(this->serverIP, this->serverPort,
-                    ip::tcp::resolver::query::numeric_service);
+                                                    ip::tcp::resolver::query::numeric_service);
 
             ip::tcp::resolver resolver(ios);
 
@@ -50,26 +51,51 @@ namespace vogro {
         }
 
         ~VogroTestClient() {
-            std::cout << INITCOLOR(BLUE_COLOR) << "Successed" << INITCOLOR(ZERO_COLOR) << std::endl;
+            std::cout << INITCOLOR(BLUE_COLOR) << "Successed"
+                      << INITCOLOR(ZERO_COLOR) << std::endl;
         }
 
         Request &Get(const std::string &path) {
-            auto p = std::make_shared<Request>("GET", path, this->socket, this->serverIP, this->serverPort);
+            auto p = std::make_shared<Request>(
+                    "GET",
+                    path,
+                    this->socket,
+                    this->serverIP,
+                    this->serverPort
+            );
             return *p;
         }
 
         Request &Post(const std::string &path) {
-            auto p = std::make_shared<Request>("POST", path, this->socket, this->serverIP, this->serverPort);
+            auto p = std::make_shared<Request>(
+                    "POST",
+                    path,
+                    this->socket,
+                    this->serverIP,
+                    this->serverPort
+            );
             return *p;
         }
 
         Request &Put(const std::string &path) {
-            auto p = std::make_shared<Request>("PUT", path, this->socket, this->serverIP, this->serverPort);
+            auto p = std::make_shared<Request>(
+                    "PUT",
+                    path,
+                    this->socket,
+                    this->serverIP,
+                    this->serverPort
+            );
             return *p;
         }
 
         Request &Delete(const std::string &path) {
-            auto p = std::make_shared<Request>("DELETE", path, this->socket, this->serverIP, this->serverPort);
+            auto p = std::make_shared<Request>(
+                    "DELETE",
+                    path,
+                    this->socket,
+                    this->serverIP,
+                    this->serverPort
+            );
             return *p;
         }
     };

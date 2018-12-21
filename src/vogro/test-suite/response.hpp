@@ -25,8 +25,8 @@
 #include "utils.hpp"
 
 void TestFailedReportor(
-        const std::string method,
-        const std::string path,
+        const std::string &method,
+        const std::string &path,
         const std::string &entity,
         const std::string &action,
         const std::string &expect,
@@ -48,7 +48,7 @@ void TestFailedReportor(
     std::cout << "but got :"
               << std::endl;
 
-    if (got == "") std::cout << "    not found" << std::endl;
+    if (got.empty()) std::cout << "    not found" << std::endl;
     else std::cout << "    " << got << std::endl;
 
     std::cout << std::endl;
@@ -134,7 +134,7 @@ namespace vogro {
     class BodyExpectation {
     private:
         const std::string &body;
-        const std::string method_;
+        const std::string &method_;
         const std::string &path_;
 
     public:
