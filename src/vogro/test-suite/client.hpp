@@ -55,10 +55,10 @@ namespace vogro {
                       << INITCOLOR(ZERO_COLOR) << std::endl;
         }
 
-        Request &Get(const std::string &path) {
+        Request &Get(std::string path) {
             auto p = std::make_shared<Request>(
                     "GET",
-                    path,
+                    std::move(path),
                     this->socket,
                     this->serverIP,
                     this->serverPort
@@ -66,10 +66,10 @@ namespace vogro {
             return *p;
         }
 
-        Request &Post(const std::string &path) {
+        Request &Post(std::string path) {
             auto p = std::make_shared<Request>(
                     "POST",
-                    path,
+                    std::move(path),
                     this->socket,
                     this->serverIP,
                     this->serverPort
@@ -77,10 +77,10 @@ namespace vogro {
             return *p;
         }
 
-        Request &Put(const std::string &path) {
+        Request &Put(std::string path) {
             auto p = std::make_shared<Request>(
                     "PUT",
-                    path,
+                    std::move(path),
                     this->socket,
                     this->serverIP,
                     this->serverPort
@@ -88,10 +88,10 @@ namespace vogro {
             return *p;
         }
 
-        Request &Delete(const std::string &path) {
+        Request &Delete(std::string path) {
             auto p = std::make_shared<Request>(
                     "DELETE",
-                    path,
+                    std::move(path),
                     this->socket,
                     this->serverIP,
                     this->serverPort

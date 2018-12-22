@@ -61,14 +61,14 @@ namespace vogro {
     class HeaderExpectation {
     private:
         const std::string method_;
-        const std::string &path_;
+        const std::string path_;
         const std::map<std::string, std::string> &headers;
 
     public:
         HeaderExpectation(
                 const std::map<std::string, std::string> &hdrs,
-                const std::string &method,
-                const std::string &path)
+                const std::string method,
+                const std::string path)
                 : headers(hdrs),
                   method_(method),
                   path_(path) {}
@@ -133,15 +133,15 @@ namespace vogro {
 
     class BodyExpectation {
     private:
-        const std::string &body;
-        const std::string &method_;
-        const std::string &path_;
+        const std::string body;
+        const std::string method_;
+        const std::string path_;
 
     public:
         BodyExpectation(
-                const std::string &bd,
-                const std::string &method,
-                const std::string &path)
+                const std::string bd,
+                const std::string method,
+                const std::string path)
                 : body(bd),
                   method_(method),
                   path_(path) {}
@@ -211,25 +211,29 @@ namespace vogro {
 
     class Response {
     private:
-        const std::string &req_method_;
-        const std::string &req_path_;
+        const std::string req_method_;
+        const std::string req_path_;
         int code;
         std::map<std::string, std::string> &headers;
-        const std::string &body;
+        const std::string & body;
 
     public:
         friend class Request;
 
-        Response(const std::string &bd,
+        Response(std::string & bd,
                  std::map<std::string, std::string> &hdrs,
-                 const std::string &req_method,
-                 const std::string &req_path
+                 std::string &req_method,
+                 std::string &req_path
         ) : req_method_(req_method),
             req_path_(req_path),
             headers(hdrs),
-            body(bd) {}
+            body(bd) {
+            std::cout<<"in contstuctor,body:"<<this->body<<std::endl;
+
+        }
 
         Response &Status(int c) {
+            std::cout<<"in status,body:"<<this->body<<std::endl;
             assert(this->code == c);
             return *this;
         }
@@ -244,6 +248,8 @@ namespace vogro {
         }
 
         BodyExpectation &Body() {
+            std::cout<<"in body,body:"<<this->body<<std::endl;
+
             auto bd = std::make_shared<BodyExpectation>(
                     this->body,
                     this->req_method_,
