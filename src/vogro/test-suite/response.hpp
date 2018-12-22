@@ -215,19 +215,20 @@ namespace vogro {
         const std::string req_path_;
         int code;
         std::map<std::string, std::string> &headers;
-        const std::string & body;
+        std::string body;
 
     public:
-        friend class Request;
 
-        Response(std::string & bd,
+        Response(std::string  bd,
                  std::map<std::string, std::string> &hdrs,
-                 std::string &req_method,
-                 std::string &req_path
+                 std::string req_method,
+                 std::string req_path,
+                 int statusCode
         ) : req_method_(req_method),
             req_path_(req_path),
             headers(hdrs),
-            body(bd) {
+            body(bd),
+            code(statusCode){
             std::cout<<"in contstuctor,body:"<<this->body<<std::endl;
 
         }

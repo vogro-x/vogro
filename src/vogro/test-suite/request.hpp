@@ -18,11 +18,12 @@
 
 #include "utils.hpp"
 #include "response.hpp"
-#include <boost/asio.hpp>
-#include <iostream>
+
 #include <map>
-#include <sstream>
 #include <string>
+#include <sstream>
+#include <iostream>
+#include <boost/asio.hpp>
 
 using namespace boost::asio;
 
@@ -84,7 +85,6 @@ namespace vogro {
 
 
         std::string makeRequestMessage() {
-            // HTTP request must contain the Host header
             this->headers["Host"] = this->ip + ":" + this->port;;
 
             auto reqURL = this->getRequestURL(this->queryParams);
@@ -140,7 +140,6 @@ namespace vogro {
         }
 
         Response &Expect() {
-
             boost::asio::streambuf requestBuffer;
             std::ostream requestStream(&requestBuffer);
             requestStream << this->makeRequestMessage();
@@ -182,10 +181,9 @@ namespace vogro {
             mybody << &responseBuffer;
             std::string bodyString = mybody.str();
 
-            auto res = std::make_shared<Response>(bodyString, resHeaders, this->method, this->requestURL);
-            res->code = statusCode;
+            auto res = std::make_shared<Response>(bodyString, resHeaders, this->method, this->requestURL,statusCode);
             return *res;
         }
-    };
+    }; // class Request
 } // namespace vogro
 #endif
