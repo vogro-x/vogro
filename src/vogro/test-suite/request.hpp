@@ -50,7 +50,7 @@ namespace vogro {
                                std::map <std::string, std::string> pathParam) {
             auto length = tplURL.length();
             std::string realPath;
-            for (int i = 0; i < length; i++) {
+            for (int i = 0; i < length; i++)
                 if (tplURL[i] == '{') {
                     std::string key;
                     for (int j = i + 1; j < length; j++)
@@ -60,7 +60,6 @@ namespace vogro {
                             else { realPath += got->second; i = j; break; }
                         } else key += tplURL[j];
                 } else realPath += tplURL[i];
-            }
 
             if (realPath.back() != '/') realPath += '/';
 
