@@ -35,4 +35,6 @@
 .idea
 static
 demo/build
+demo/cmake-build-debug
 src/build
+cmake-build-debug/

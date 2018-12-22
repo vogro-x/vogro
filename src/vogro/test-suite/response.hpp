@@ -61,7 +61,7 @@ namespace vogro {
     class HeaderExpectation {
     private:
 
-     
+
         const std::string method_;
         const std::string path_;
         const std::map<std::string, std::string> &headers;
@@ -212,11 +212,11 @@ namespace vogro {
         }
     }; // class BodyExpectation
 
-    class Response: std::enable_shared_from_this<Response> {
+    class Response : std::enable_shared_from_this<Response> {
     private:
 
-        const std::string req_method_;
-        const std::string req_path_;
+        const std::string &req_method_;
+        const std::string &req_path_;
         int code;
         std::map<std::string, std::string> &headers;
         std::string body;
@@ -224,48 +224,37 @@ namespace vogro {
     public:
 
 
-        
-        Response(std::string  bd,
+        Response(const std::string bd,
                  std::map<std::string, std::string> &hdrs,
-                 std::string req_method,
-                 std::string req_path,
+                 const std::string &req_method,
+                 const std::string &req_path,
                  int statusCode
         ) : req_method_(req_method),
             req_path_(req_path),
             headers(hdrs),
-            body(bd) {
-              std::cout << body << " " << bd << std::endl;
-            }
+            body(bd),
+            code(statusCode) {}
 
         Response *Status(int c) {
             assert(this->code == c);
-            std::cout << body << std::endl;
             return this;
-
         }
 
-        
+
         std::shared_ptr<HeaderExpectation> Header() {
-        // HeaderExpectation &Header() {
-            auto hp = std::make_shared<HeaderExpectation>(
+            return std::make_shared<HeaderExpectation>(
                     this->headers,
                     this->req_method_,
                     this->req_path_
             );
-            return hp;
-            // return *hp;
         }
 
         std::shared_ptr<BodyExpectation> Body() {
-          std::cout << body  << std::endl;
-       
-
-            auto bd = std::make_shared<BodyExpectation>(
+            return std::make_shared<BodyExpectation>(
                     this->body,
                     this->req_method_,
                     this->req_path_
             );
-            return bd;
         }
     }; //class Response
 } //namespace vogro

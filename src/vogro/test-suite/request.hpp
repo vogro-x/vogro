@@ -97,7 +97,6 @@ namespace vogro {
             for (auto header : this->headers)
                 ss << header.first << ": " << header.second << "\r\n";
 
-
             ss << "Content-Length: " << this->body.length() << "\r\n";
             ss << "\r\n";
             ss << this->body;
@@ -106,9 +105,9 @@ namespace vogro {
 
 
     public:
-        Request(const std::string mthd, const std::string &path,
+        Request(const std::string &mthd, const std::string &path,
                 std::shared_ptr <boost::asio::ip::tcp::socket> &sock,
-                const std::string serverIP, const std::string serverPort)
+                const std::string &serverIP, const std::string &serverPort)
                 : method(mthd), pathTpl(path), socket(sock),
                 ip(serverIP), port(serverPort) {}
 
@@ -140,27 +139,6 @@ namespace vogro {
             return this;
         }
 
-        std::string makeRequestMessage() {
-            // HTTP request must contain the Host header
-            auto host_str = this->ip + ":" + this->port;
-            this->headers["Host"] = host_str;
-
-            auto fp = this->getFinalPath();
-            this->final_path = fp;
-
-            std::stringstream ss;
-            ss << this->method << " " << url_encode(fp) << " HTTP/1.1\r\n";
-
-            for (auto h : this->headers) {
-                ss << h.first << ": " << h.second << "\r\n";
-            }
-
-
-            ss << "Content-Length: " << this->body.length() << "\r\n";
-            ss << "\r\n";
-            ss << this->body;
-            return ss.str();
-        }
 
         std::shared_ptr<Response> Expect() {
             boost::asio::streambuf requestBuffer;
@@ -204,9 +182,7 @@ namespace vogro {
             mybody << &responseBuffer;
             std::string bodyString = mybody.str();
 
-            auto res = std::make_shared<Response>(bodyString, resHeaders, this->method, this->final_path);
-            res->code = status_code;
-            return res;  
+            return std::make_shared<Response>(bodyString, resHeaders, this->method, this->requestURL, statusCode);
         }
     }; // class Request
 } // namespace vogro
