@@ -108,25 +108,26 @@ int main(int argc, char **argv) {
 #include "vogro/test-suite/client.hpp"
 
 int main() {
-    vogro::VogroTestClient client("127.0.0.1", "8080");
+    auto client = std::make_shared<vogro::VogroTestClient>("127.0.0.1", "8080");
 
-    client.Get("/").Expect().Body().Contains("value from global middleware");
 
-    client.Get("/hello/{name}/{age}/").withPath("name", "Andrewpqc").withPath("age", "22").
-            Expect().Body().Equal("hello Andrewpqc, you are 22 years old.");
+    client->Get("/")->Expect()->Body()->Contains("value from global middleware");
 
-    client.Get("/method/get/").Expect().Body().Contains("get");
+    client->Get("/hello/{name}/{age}/")->withPath("name", "Andrewpqc")->withPath("age", "22")->
+            Expect()->Body()->Equal("hello Andrewpqc, you are 22 years old.");
 
-    client.Post("/method/post/").Expect().Body().Contains("post");
+    client->Get("/method/get/")->Expect()->Body()->Contains("get");
 
-    client.Put("/method/put/").Expect().Body().Contains("put");
+    client->Post("/method/post/")->Expect()->Body()->Contains("post");
 
-    client.Delete("/method/delete").Expect().Body().Contains("delete");
+    client->Put("/method/put/")->Expect()->Body()->Contains("put");
 
-    client.Post("/json/").withJSON("{\"name\":\"Andrewpqc\"}").Expect().
-            Body().Contains("Andrewpqc");
+    client->Delete("/method/delete")->Expect()->Body()->Contains("delete");
 
-    client.Get("/not/found/").Expect().Body().Equal("Custom Not Found");
+    client->Post("/json/")->withJSON("{\"name\":\"Andrewpqc\"}")->Expect()->
+            Body()->Contains("Andrewpqc");
+
+    client->Get("/not/found/")->Expect()->Body()->Equal("Custom Not Found");
 
     return 0;
 }
