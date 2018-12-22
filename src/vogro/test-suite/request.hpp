@@ -18,11 +18,12 @@
 
 #include "utils.hpp"
 #include "response.hpp"
-#include <boost/asio.hpp>
-#include <iostream>
+
 #include <map>
-#include <sstream>
 #include <string>
+#include <sstream>
+#include <iostream>
+#include <boost/asio.hpp>
 
 using namespace boost::asio;
 
@@ -30,12 +31,13 @@ namespace vogro {
 
     class Request:std::enable_shared_from_this<Request> {
     private:
-         std::string ip;
-         std::string port;
+        
+        std::string ip;
+        std::string port;
 
-         std::string method;
-         std::string pathTpl; // MUST reference
-        std::string final_path;
+        std::string method;
+        const std::string &pathTpl;
+        std::string requestURL;
 
 
         std::map <std::string, std::string> headers;
@@ -43,67 +45,72 @@ namespace vogro {
         std::map <std::string, std::string> queryParams;
         std::map <std::string, std::string> pathParams;
 
-        // std::stringstream body_stream;
         std::string body;
         std::shared_ptr <ip::tcp::socket> &socket;
 
-        std::string getFinalPath() {
+        std::string getBaseURL(std::string tplURL,
+                               std::map <std::string, std::string> pathParam) {
+            auto length = tplURL.length();
+            std::string realPath;
+            for (int i = 0; i < length; i++)
+                if (tplURL[i] == '{') {
+                    std::string key;
+                    for (int j = i + 1; j < length; j++)
+                        if (tplURL[j] == '}') {
+                            auto got = pathParam.find(key);
+                            if (got == pathParam.end()) throw "unknow key" + key;
+                            else { realPath += got->second; i = j; break; }
+                        } else key += tplURL[j];
+                } else realPath += tplURL[i];
+
+            if (realPath.back() != '/') realPath += '/';
+
+            return realPath;
+        }
+
+        std::string getRequestURL(std::map <std::string, std::string> queryParameters) {
             std::stringstream pathStream;
-            auto realPath = get_real_path(this->pathTpl, this->pathParams);
-            pathStream << realPath;
 
-            if (this->queryParams.size() != 0) {
-                pathStream << "?";
-            }
+            pathStream << getBaseURL(this->pathTpl, this->pathParams);
 
-            for (auto it : queryParams)
+            if (!queryParameters.empty()) pathStream << "?";
+
+            for (auto it : queryParameters)
                 pathStream << it.first << "=" << it.second << "&";
 
             auto finalPath = pathStream.str();
-            if (finalPath.back() == '&')
-                finalPath.pop_back();
+            if (finalPath.back() == '&') finalPath.pop_back();
 
             return finalPath;
         }
 
-        std::string get_real_path(const std::string &originPath,
-                                  const std::map <std::string, std::string> &pathParam) {
-            auto length = originPath.length();
-            std::string realPath;
-            for (int i = 0; i < length; i++) {
-                if (originPath[i] == '{') {
-                    std::string key;
-                    for (int j = i + 1; j < length; j++) {
-                        if (originPath[j] == '}') {
-                            auto got = pathParam.find(key);
-                            if (got == pathParam.end()) {
-                                std::cout << "Fatal: Lock of path Parameter " << key << std::endl;
-                                exit(1);
-                            } else {
-                                realPath += got->second;
-                                i = j;
-                                break;
-                            }
-                        } else {
-                            key += originPath[j];
-                        }
-                    }
-                } else {
-                    realPath += originPath[i];
-                }
-            }
 
-            if (realPath.back() != '/')
-                realPath += '/';
-            return realPath;
+        std::string makeRequestMessage() {
+            this->headers["Host"] = this->ip + ":" + this->port;;
+
+            auto reqURL = this->getRequestURL(this->queryParams);
+            this->requestURL = reqURL;
+
+            std::stringstream ss;
+            ss << this->method << " " << url_encode(reqURL) << " HTTP/1.1\r\n";
+
+            for (auto header : this->headers)
+                ss << header.first << ": " << header.second << "\r\n";
+
+
+            ss << "Content-Length: " << this->body.length() << "\r\n";
+            ss << "\r\n";
+            ss << this->body;
+            return ss.str();
         }
+
 
     public:
-        Request(const std::string &mthd, const std::string &p,
+        Request(const std::string mthd, const std::string &path,
                 std::shared_ptr <boost::asio::ip::tcp::socket> &sock,
-                const std::string &serverIP, const std::string &serverPort)
-                : method(mthd), pathTpl(p), socket(sock), ip(serverIP), port(serverPort) {
-        }
+                const std::string serverIP, const std::string serverPort)
+                : method(mthd), pathTpl(path), socket(sock),
+                ip(serverIP), port(serverPort) {}
 
         Request* withQuery(const std::string &key, const std::string &val) {
             this->queryParams[key] = val;
@@ -112,8 +119,8 @@ namespace vogro {
 
         Request* withBasicAuth(const std::string &username, const std::string &password) {
             auto basicAuthString = username + ":" + password;
-            auto encodedString =
-                    "Basic " + base64_encode((unsigned char *) (basicAuthString.c_str()), basicAuthString.length());
+            auto encodedString = "Basic " + base64_encode((unsigned char *) (basicAuthString.c_str()),
+                    basicAuthString.length());
             return this->withHeader("Authorization", encodedString);
         }
 
@@ -156,54 +163,51 @@ namespace vogro {
         }
 
         std::shared_ptr<Response> Expect() {
-        // Response &Expect() {
+            boost::asio::streambuf requestBuffer;
+            std::ostream requestStream(&requestBuffer);
+            requestStream << this->makeRequestMessage();
+            boost::asio::write(*socket, requestBuffer);
 
-            boost::asio::streambuf request_buffer;
-            std::ostream request_stream(&request_buffer);
-            request_stream << this->makeRequestMessage();
-            boost::asio::write(*socket, request_buffer);
+            boost::asio::streambuf responseBuffer;
+            boost::asio::read_until(*socket, responseBuffer, "\r\n");
+            std::istream responseStream(&responseBuffer);
 
-            boost::asio::streambuf response_buffer;
-            boost::asio::read_until(*socket, response_buffer, "\r\n");
-            std::istream response_stream(&response_buffer);
+            std::string httpVersion, statusMessage;
+            int statusCode;
 
-            std::string http_version;
-            int status_code;
-            std::string status_message;
+            responseStream >> httpVersion;
+            responseStream >> statusCode;
+            std::getline(responseStream, statusMessage);
 
-            response_stream >> http_version;
-            response_stream >> status_code;
-            std::getline(response_stream, status_message);
+            auto bytesTransferred = boost::asio::read_until(*socket, responseBuffer, "\r\n\r\n");
 
-            auto bytes_transfered = boost::asio::read_until(*socket, response_buffer, "\r\n\r\n");
-
-            auto total = response_buffer.size();
+            auto total = responseBuffer.size();
 
             std::string header;
-            while (std::getline(response_stream, header) && header != "\r") {
-                auto parse_result = parse_header(header);
-                resHeaders[parse_result.first] = parse_result.second;
+            while (std::getline(responseStream, header) && header != "\r") {
+                auto kvPairHeader = parse_header(header);
+                resHeaders[kvPairHeader.first] = kvPairHeader.second;
             }
 
 
-            auto bodyLength = (resHeaders.find("Content-Length") == resHeaders.end()) ? "0" : resHeaders["Content-Length"];
+            auto bodyLength = (resHeaders.find("Content-Length") == resHeaders.end())
+                                ? "0" : resHeaders["Content-Length"];
             auto Length = std::stoull(bodyLength);
-            auto additional_bytes_num = total - bytes_transfered;
-            auto remain = Length - additional_bytes_num;
+            auto additionalBytesNum = total - bytesTransferred;
+            auto remain = Length - additionalBytesNum;
             if (remain > 0) {
                 boost::system::error_code error;
-                boost::asio::read(*socket, response_buffer, boost::asio::transfer_exactly(remain), error);
+                boost::asio::read(*socket, responseBuffer, boost::asio::transfer_exactly(remain), error);
             }
 
             std::stringstream mybody;
-            mybody << &response_buffer;
+            mybody << &responseBuffer;
             std::string bodyString = mybody.str();
 
             auto res = std::make_shared<Response>(bodyString, resHeaders, this->method, this->final_path);
             res->code = status_code;
-            // return *res;
-            return res;
+            return res;  
         }
-    };
+    }; // class Request
 } // namespace vogro
 #endif

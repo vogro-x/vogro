@@ -1,37 +1,35 @@
-
 #include "vogro/test-suite/client.hpp"
 
-//1->3 ms pre request ----> sync client
 int main(void) {
-        auto client = std::make_shared<vogro::VogroTestClient>("127.0.0.1", "8080");
+    auto client = std::make_shared<vogro::VogroTestClient>("127.0.0.1", "8080");
+        
+    client->Get("/")->Expect()->Status(200)->Body()->Contains("Index");
 
-//    for (int i = 0; i < 100; i++) {
+    client->Get("/username/{name}")->withPath("name","Andrewpqc")-> Expect()->
+        Body()->Contains("Andrewpqc");
 
-        client->Get("/")->Expect()->Status(200)->Body()->Contains("Index");
+    client->Get("/username/{name}")->withPath("name","阿超")-> Expect()->
+        Body()->Contains("阿超");
 
-        client->Get("/username/{name}")->withPath("name","Andrewpqc")-> Expect()->
-            Body()->Contains("Andrewpqc");
+    client->Get("/course/{coursename}/user/{id}/")->withPath("coursename","A1310B")-> 
+        withPath("id","123")-> withQuery("nn","123")-> Expect()->Body()->Contains("A1310B");
 
-        client->Get("/username/{name}")->withPath("name","阿超")-> Expect()->
-            Body()->Contains("阿超");
+    client->Get("/user/get/")->Expect()->Status(200)-> Body()->Contains("hello");
 
-        client->Get("/course/{coursename}/user/{id}/")->withPath("coursename","A1310B")-> 
-            withPath("id","123")-> withQuery("nn","123")-> Expect()->Body()->Contains("A1310B");
+    client->Post("/user/post/")->Expect()->Status(200)-> Body()->Contains("post");
 
-        client->Get("/user/get/")->Expect()->Status(200)-> Body()->Contains("hello");
+    client->Put("/user/put/")->Expect()->Status(200)-> Body()->Contains("put");
 
-        client->Post("/user/post/")->Expect()->Status(200)-> Body()->Contains("post");
+    client->Delete("/user/delete/")->Expect()->Status(200)-> Body()->Contains("delete");
 
-        client->Put("/user/put/")->Expect()->Status(200)-> Body()->Contains("put");
+    client->Get("/auth/")->withBasicAuth("andrew", "12345")-> Expect()->Body()->Contains("andrew");
 
-        client->Delete("/user/delete/")->Expect()->Status(200)-> Body()->Contains("delete");
+    client->Get("/json/")->Expect()->Body()->Contains("\"name\":\"andrew\"");
 
-        client->Get("/auth/")->withBasicAuth("andrew", "12345")-> Expect()->Body()->Contains("andrew");
+    client->Post("/a/post/")->withJSON("{\"name\":\"Andrewpqc\"}")-> Expect()->Body()->Contains("Andrewpqc");
 
-        client->Get("/json/")->Expect()->Body()->Contains("\"name\":\"andrew\"");
+    client.Get("/").Expect().Status(200).Body().Contains("Index");
 
-        client->Post("/a/post/")->withJSON("{\"name\":\"Andrewpqc\"}")-> Expect()->Body()->Contains("Andrewpqc");
 
-//    }
     return 0;
 }

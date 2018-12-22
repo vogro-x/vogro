@@ -25,8 +25,8 @@
 #include "utils.hpp"
 
 void TestFailedReportor(
-        const std::string method,
-        const std::string path,
+        const std::string &method,
+        const std::string &path,
         const std::string &entity,
         const std::string &action,
         const std::string &expect,
@@ -48,7 +48,7 @@ void TestFailedReportor(
     std::cout << "but got :"
               << std::endl;
 
-    if (got == "") std::cout << "    not found" << std::endl;
+    if (got.empty()) std::cout << "    not found" << std::endl;
     else std::cout << "    " << got << std::endl;
 
     std::cout << std::endl;
@@ -60,15 +60,17 @@ namespace vogro {
 
     class HeaderExpectation {
     private:
-         std::string method_;
-         std::string path_;
-         std::map<std::string, std::string> headers;
+
+     
+        const std::string method_;
+        const std::string path_;
+        const std::map<std::string, std::string> &headers;
 
     public:
         HeaderExpectation(
                 const std::map<std::string, std::string> &hdrs,
-                const std::string &method,
-                const std::string &path)
+                const std::string method,
+                const std::string path)
                 : headers(hdrs),
                   method_(method),
                   path_(path) {}
@@ -133,15 +135,16 @@ namespace vogro {
 
     class BodyExpectation {
     private:
-         std::string body;
-         std::string method_;
-         std::string path_;
+
+        const std::string body;
+        const std::string method_;
+        const std::string path_;
 
     public:
         BodyExpectation(
-                const std::string &bd,
-                const std::string &method,
-                const std::string &path)
+                const std::string bd,
+                const std::string method,
+                const std::string path)
                 : body(bd),
                   method_(method),
                   path_(path) {}
@@ -211,21 +214,22 @@ namespace vogro {
 
     class Response: std::enable_shared_from_this<Response> {
     private:
-         std::string req_method_;
-         std::string req_path_;
+
+        const std::string req_method_;
+        const std::string req_path_;
         int code;
-        std::map<std::string, std::string> headers;
+        std::map<std::string, std::string> &headers;
         std::string body;
 
     public:
-        friend class Request;
 
-        // Responce(std::string &&bd): body(std::move(bd)) {}
 
-        Response(const std::string &bd,
+        
+        Response(std::string  bd,
                  std::map<std::string, std::string> &hdrs,
-                 const std::string &req_method,
-                 const std::string &req_path
+                 std::string req_method,
+                 std::string req_path,
+                 int statusCode
         ) : req_method_(req_method),
             req_path_(req_path),
             headers(hdrs),
@@ -234,15 +238,13 @@ namespace vogro {
             }
 
         Response *Status(int c) {
-        // Response &Status(int c) {
-            // assert(this->code == c);
+            assert(this->code == c);
             std::cout << body << std::endl;
-            // return *this;
             return this;
-            // return shared_from_this();
+
         }
 
-
+        
         std::shared_ptr<HeaderExpectation> Header() {
         // HeaderExpectation &Header() {
             auto hp = std::make_shared<HeaderExpectation>(
@@ -255,14 +257,14 @@ namespace vogro {
         }
 
         std::shared_ptr<BodyExpectation> Body() {
-        // BodyExpectation &Body() {
           std::cout << body  << std::endl;
+       
+
             auto bd = std::make_shared<BodyExpectation>(
                     this->body,
                     this->req_method_,
                     this->req_path_
             );
-            // return *bd;
             return bd;
         }
     }; //class Response
