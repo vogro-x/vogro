@@ -2,7 +2,6 @@ set(CMAKE_C_COMPILER "/usr/bin/cc")
 set(CMAKE_C_COMPILER_ARG1 "")
 set(CMAKE_C_COMPILER_ID "GNU")
 set(CMAKE_C_COMPILER_VERSION "7.3.0")
-set(CMAKE_C_COMPILER_VERSION_INTERNAL "")
 set(CMAKE_C_COMPILER_WRAPPER "")
 set(CMAKE_C_STANDARD_COMPUTED_DEFAULT "11")
 set(CMAKE_C_COMPILE_FEATURES "c_std_90;c_function_prototypes;c_std_99;c_restrict;c_variadic_macros;c_std_11;c_static_assert")
@@ -13,7 +12,6 @@ set(CMAKE_C11_COMPILE_FEATURES "c_std_11;c_static_assert")
 set(CMAKE_C_PLATFORM_ID "Linux")
 set(CMAKE_C_SIMULATE_ID "")
 set(CMAKE_C_SIMULATE_VERSION "")
-
 
 
 set(CMAKE_AR "/usr/bin/ar")

@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/andrew/Code/vogro/demo/main.cpp" "/home/andrew/Code/vogro/demo/cmake-build-debug/CMakeFiles/vogroServer.dir/main.cpp.o"
+  "/home/xvvx/code/vogro/demo/main.cpp" "/home/xvvx/code/vogro/demo/cmake-build-debug/CMakeFiles/vogroServer.dir/main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

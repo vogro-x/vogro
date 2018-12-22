@@ -29,8 +29,9 @@ using namespace boost::asio;
 
 namespace vogro {
 
-    class Request {
+    class Request:std::enable_shared_from_this<Request> {
     private:
+        
         std::string ip;
         std::string port;
 
@@ -111,35 +112,57 @@ namespace vogro {
                 : method(mthd), pathTpl(path), socket(sock),
                 ip(serverIP), port(serverPort) {}
 
-        Request &withQuery(const std::string &key, const std::string &val) {
+        Request* withQuery(const std::string &key, const std::string &val) {
             this->queryParams[key] = val;
-            return *this;
+            return this;
         }
 
-        Request &withBasicAuth(const std::string &username, const std::string &password) {
+        Request* withBasicAuth(const std::string &username, const std::string &password) {
             auto basicAuthString = username + ":" + password;
             auto encodedString = "Basic " + base64_encode((unsigned char *) (basicAuthString.c_str()),
                     basicAuthString.length());
             return this->withHeader("Authorization", encodedString);
         }
 
-        Request &withPath(const std::string &key, const std::string &val) {
+        Request* withPath(const std::string &key, const std::string &val) {
             this->pathParams[key] = val;
-            return *this;
+            return this;
         }
 
-        Request &withJSON(const std::string &bd) {
+        Request* withJSON(const std::string &bd) {
             this->body = bd;
             this->headers["Content-Type"] = "application/json";
-            return *this;
+            return this;
         }
 
-        Request &withHeader(const std::string &key, const std::string &val) {
+        Request* withHeader(const std::string &key, const std::string &val) {
             this->headers[key] = val;
-            return *this;
+            return this;
         }
 
-        Response &Expect() {
+        std::string makeRequestMessage() {
+            // HTTP request must contain the Host header
+            auto host_str = this->ip + ":" + this->port;
+            this->headers["Host"] = host_str;
+
+            auto fp = this->getFinalPath();
+            this->final_path = fp;
+
+            std::stringstream ss;
+            ss << this->method << " " << url_encode(fp) << " HTTP/1.1\r\n";
+
+            for (auto h : this->headers) {
+                ss << h.first << ": " << h.second << "\r\n";
+            }
+
+
+            ss << "Content-Length: " << this->body.length() << "\r\n";
+            ss << "\r\n";
+            ss << this->body;
+            return ss.str();
+        }
+
+        std::shared_ptr<Response> Expect() {
             boost::asio::streambuf requestBuffer;
             std::ostream requestStream(&requestBuffer);
             requestStream << this->makeRequestMessage();
@@ -181,8 +204,9 @@ namespace vogro {
             mybody << &responseBuffer;
             std::string bodyString = mybody.str();
 
-            auto res = std::make_shared<Response>(bodyString, resHeaders, this->method, this->requestURL,statusCode);
-            return *res;
+            auto res = std::make_shared<Response>(bodyString, resHeaders, this->method, this->final_path);
+            res->code = status_code;
+            return res;  
         }
     }; // class Request
 } // namespace vogro

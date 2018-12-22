@@ -428,15 +428,15 @@ void ServeStatic(vogro::Response &response, vogro::Request &request,
                     _file.read(&str[0], readLength - send_count);
 
                     responseStream << str;
-                    boost::asio::write(*socket, *write_buffer);//,
+                    boost::asio::write(*socket, *write_buffer);
                     //[](const boost::system::error_code& ec, size_t bytes_transferred) {});
 
                 } else {
                     _file.read(&str[0], 4096);
 
                     responseStream << str;
-                    boost::asio::write(*socket, *write_buffer);//,
-                    //[](const boost::system::error_code& ec, size_t bytes_transferred) {});
+                    boost::asio::write(*socket, *write_buffer);//
+                  //  [](const boost::system::error_code& ec, size_t bytes_transferred) {});
                 }
             }
             return;
