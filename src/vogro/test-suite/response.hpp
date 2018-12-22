@@ -60,9 +60,9 @@ namespace vogro {
 
     class HeaderExpectation {
     private:
-        const std::string method_;
-        const std::string &path_;
-        const std::map<std::string, std::string> &headers;
+         std::string method_;
+         std::string path_;
+         std::map<std::string, std::string> headers;
 
     public:
         HeaderExpectation(
@@ -133,9 +133,9 @@ namespace vogro {
 
     class BodyExpectation {
     private:
-        const std::string &body;
-        const std::string method_;
-        const std::string &path_;
+         std::string body;
+         std::string method_;
+         std::string path_;
 
     public:
         BodyExpectation(
@@ -209,16 +209,18 @@ namespace vogro {
         }
     }; // class BodyExpectation
 
-    class Response {
+    class Response: std::enable_shared_from_this<Response> {
     private:
-        const std::string &req_method_;
-        const std::string &req_path_;
+         std::string req_method_;
+         std::string req_path_;
         int code;
-        std::map<std::string, std::string> &headers;
-        const std::string &body;
+        std::map<std::string, std::string> headers;
+        std::string body;
 
     public:
         friend class Request;
+
+        // Responce(std::string &&bd): body(std::move(bd)) {}
 
         Response(const std::string &bd,
                  std::map<std::string, std::string> &hdrs,
@@ -227,29 +229,41 @@ namespace vogro {
         ) : req_method_(req_method),
             req_path_(req_path),
             headers(hdrs),
-            body(bd) {}
+            body(bd) {
+              std::cout << body << " " << bd << std::endl;
+            }
 
-        Response &Status(int c) {
-            assert(this->code == c);
-            return *this;
+        Response *Status(int c) {
+        // Response &Status(int c) {
+            // assert(this->code == c);
+            std::cout << body << std::endl;
+            // return *this;
+            return this;
+            // return shared_from_this();
         }
 
-        HeaderExpectation &Header() {
+
+        std::shared_ptr<HeaderExpectation> Header() {
+        // HeaderExpectation &Header() {
             auto hp = std::make_shared<HeaderExpectation>(
                     this->headers,
                     this->req_method_,
                     this->req_path_
             );
-            return *hp;
+            return hp;
+            // return *hp;
         }
 
-        BodyExpectation &Body() {
+        std::shared_ptr<BodyExpectation> Body() {
+        // BodyExpectation &Body() {
+          std::cout << body  << std::endl;
             auto bd = std::make_shared<BodyExpectation>(
                     this->body,
                     this->req_method_,
                     this->req_path_
             );
-            return *bd;
+            // return *bd;
+            return bd;
         }
     }; //class Response
 } //namespace vogro

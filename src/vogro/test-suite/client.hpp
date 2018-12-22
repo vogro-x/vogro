@@ -53,25 +53,39 @@ namespace vogro {
             std::cout << INITCOLOR(BLUE_COLOR) << "Successed" << INITCOLOR(ZERO_COLOR) << std::endl;
         }
 
-        Request &Get(const std::string &path) {
-            auto p = std::make_shared<Request>("GET", path, this->socket, this->serverIP, this->serverPort);
-            return *p;
-        }
 
-        Request &Post(const std::string &path) {
-            auto p = std::make_shared<Request>("POST", path, this->socket, this->serverIP, this->serverPort);
-            return *p;
+        std::shared_ptr<Request> Get(const std::string &path) {
+            return std::make_shared<Request>("GET", path, this->socket, this->serverIP, this->serverPort);
         }
+        // Request &Get(const std::string &path) {
+        //     auto p = 
+        //     return *p;
+        // }
 
-        Request &Put(const std::string &path) {
-            auto p = std::make_shared<Request>("PUT", path, this->socket, this->serverIP, this->serverPort);
-            return *p;
+        std::shared_ptr<Request> Post(const std::string &path) {
+            return std::make_shared<Request>("POST", path, this->socket, this->serverIP, this->serverPort);
         }
+        // Request &Post(const std::string &path) {
+        //     auto p = 
+        //     return *p;
+        // }
 
-        Request &Delete(const std::string &path) {
-            auto p = std::make_shared<Request>("DELETE", path, this->socket, this->serverIP, this->serverPort);
-            return *p;
+
+        std::shared_ptr<Request> Put(const std::string &path) {
+            return std::make_shared<Request>("PUT", path, this->socket, this->serverIP, this->serverPort);
         }
+        // Request &Put(const std::string &path) {
+        //     auto p = 
+        //     return *p;
+        // }
+
+        std::shared_ptr<Request> Delete(const std::string &path) {
+            return std::make_shared<Request>("DELETE", path, this->socket, this->serverIP, this->serverPort);
+        }
+        // Request &Delete(const std::string &path) {
+        //     auto p = std::make_shared<Request>("DELETE", path, this->socket, this->serverIP, this->serverPort);
+        //     return *p;
+        // }
     };
 } //namespace vogro
 
