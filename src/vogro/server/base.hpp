@@ -28,6 +28,8 @@
 #include <typeinfo>
 #include <functional>
 
+#include "group.hpp"
+#include "logo.hpp"
 #include "utils.hpp"
 #include "logger.hpp"
 #include "request.hpp"
@@ -35,88 +37,12 @@
 #include "context.hpp"
 #include "static.hpp"
 #include "default_error_handler.hpp"
-#include "logo.hpp"
+
 
 namespace vogro {
-
-
     /*url , method, handlers*/
-    typedef std::map<std::string, std::unordered_map<std::string,
-            std::vector<std::function<void(vogro::Context &)>>>> RegistrationCenter;
-
-    class Group {
-    private:
-        std::string prefix_;
-        RegistrationCenter &rc_;
-        const std::function<void(vogro::Context &)> groupGlobalHandler_ = nullptr;
-
-        Logger<TerminalPolicy> &logger = Logger<TerminalPolicy>::getLoggerInstance("vogro.log");
-
-
-        void addHandler(const std::string &path, const std::string &method) {
-            logger.LOG_INFO(path, method, "handlers register ok");
-        }
-
-        template<typename First, typename... Rest>
-        void addHandler(const std::string &path, const std::string &method, const First &parm1,
-                        const Rest &... parm) {
-            this->rc_[path][method].push_back(parm1);
-            addHandler(path, method, parm...);
-        }
-
-    public:
-        Group(
-                const std::string &prefix,
-                RegistrationCenter &rc,
-                const std::function<void(vogro::Context &)> groupGlobalHandler
-        ) : prefix_(prefix), rc_(rc), groupGlobalHandler_(groupGlobalHandler) {}
-
-        Group(
-                const std::string &prefix,
-                RegistrationCenter &rc
-        ) : prefix_(prefix), rc_(rc) {}
-
-        template<typename... Args>
-        void Get(const std::string &userPath, const Args &... args) {
-            auto path = prefix_ + userPath;
-
-            if (this->groupGlobalHandler_ != nullptr)
-                this->rc_[path]["GET"].push_back(groupGlobalHandler_);
-
-            this->addHandler(path, "GET", args...);
-        }
-
-        template<typename... Args>
-        void Post(const std::string &userPath, const Args &... args) {
-            auto path = prefix_ + userPath;
-
-            if (this->groupGlobalHandler_ != nullptr)
-                this->rc_[path]["POST"].push_back(groupGlobalHandler_);
-
-            this->addHandler(path, "POST", args...);
-        }
-
-        template<typename... Args>
-        void Put(const std::string &userPath, const Args &... args) {
-            auto path = prefix_ + userPath;
-
-            if (this->groupGlobalHandler_ != nullptr)
-                this->rc_[path]["PUT"].push_back(groupGlobalHandler_);
-
-            this->addHandler(path, "PUT", args...);
-        }
-
-        template<typename... Args>
-        void Delete(const std::string &userPath, const Args &... args) {
-            auto path = prefix_ + userPath;
-
-            if (this->groupGlobalHandler_ != nullptr)
-                this->rc_[path]["DELETE"].push_back(groupGlobalHandler_);
-
-            this->addHandler(path, "DELETE", args...);
-        }
-    };
-
+    using  RegistrationCenter =  std::map<std::string, std::unordered_map<std::string,
+                                           std::vector<std::function<void(vogro::Context &)>>>>;
 
     template<typename socket_type>
     class ServerBase {
@@ -374,16 +300,14 @@ namespace vogro {
             this->addHandler(userPath, "PUT", args...);
         }
 
-        std::shared_ptr<vogro::Group>
-        makeGroup(std::string &&prefix,
+        std::shared_ptr<vogro::Group> makeGroup(std::string &&prefix,
                   const std::function<void(vogro::Context &)> &handler) {
             if (prefix.back() == '/')
                 prefix.pop_back();
             return std::make_shared<vogro::Group>(prefix, user_resource, handler);
         }
 
-        std::shared_ptr<vogro::Group>
-        makeGroup(std::string &&prefix) {
+        std::shared_ptr<vogro::Group> makeGroup(std::string &&prefix) {
             if (prefix.back() == '/')
                 prefix.pop_back();
             return std::make_shared<vogro::Group>(prefix, user_resource);
@@ -398,8 +322,7 @@ namespace vogro {
         void Use(std::function<void(vogro::Context &)> middleware) {
             this->globalMiddlewares.push_back(middleware);
         }
-    };
-
+    }; // class ServerBase
 } // namespace vogro
 
 #endif
