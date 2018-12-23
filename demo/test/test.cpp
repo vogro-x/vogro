@@ -3,7 +3,7 @@
 int main() {
     auto client = std::make_shared<vogro::VogroTestClient>("127.0.0.1", "8080");
 
-    client->Get("/")->Expect()->Status(200)->Body()->Contains("Index");
+    client->Get("/")->Expect()->Status(200)->Body()->Contains("Index")->Equal("<h1>Index Page</h1>");
 
     client->Get("/username/{name}")->withPath("name", "Andrewpqc")->Expect()->
             Body()->Contains("Andrewpqc");

@@ -57,20 +57,17 @@ void TestFailedReportor(
 
 
 namespace vogro {
-
     class HeaderExpectation {
     private:
-
-
-        const std::string method_;
-        const std::string path_;
+        const std::string &method_;
+        const std::string &path_;
         const std::map<std::string, std::string> &headers;
 
     public:
         HeaderExpectation(
                 const std::map<std::string, std::string> &hdrs,
-                const std::string method,
-                const std::string path)
+                const std::string &method,
+                const std::string &path)
                 : headers(hdrs),
                   method_(method),
                   path_(path) {}
@@ -80,7 +77,7 @@ namespace vogro {
             return (got == this->headers.end()) ? "" : got->second;
         }
 
-        HeaderExpectation &Contains(
+        HeaderExpectation *Contains(
                 const std::string &header_key,
                 const std::string &header_val
         ) {
@@ -108,10 +105,10 @@ namespace vogro {
                         got
                 );
             }
-            return *this;
+            return this;
         }
 
-        HeaderExpectation &NotContains(
+        HeaderExpectation *NotContains(
                 const std::string &header_key,
                 const std::string &header_val
         ) {
@@ -129,22 +126,22 @@ namespace vogro {
                 );
             }
 
-            return *this;
+            return this;
         }
     }; // class HeaderExpectation
 
     class BodyExpectation {
     private:
 
-        const std::string body;
-        const std::string method_;
-        const std::string path_;
+        const std::string &body;
+        const std::string &method_;
+        const std::string &path_;
 
     public:
         BodyExpectation(
-                const std::string bd,
-                const std::string method,
-                const std::string path)
+                const std::string &bd,
+                const std::string &method,
+                const std::string &path)
                 : body(bd),
                   method_(method),
                   path_(path) {}
@@ -153,7 +150,7 @@ namespace vogro {
             return this->body;
         }
 
-        BodyExpectation &Contains(const std::string &x) {
+        BodyExpectation *Contains(const std::string &x) {
             std::size_t found = this->body.find(x);
             if (found == std::string::npos) {
                 TestFailedReportor(
@@ -165,10 +162,10 @@ namespace vogro {
                         this->body
                 );
             }
-            return *this;
+            return this;
         }
 
-        BodyExpectation &NotContains(const std::string &x) {
+        BodyExpectation *NotContains(const std::string &x) {
             std::size_t found = this->body.find(x);
             if (found != std::string::npos) {
                 TestFailedReportor(
@@ -180,10 +177,10 @@ namespace vogro {
                         this->body
                 );
             }
-            return *this;
+            return this;
         }
 
-        BodyExpectation &Equal(const std::string &bd) {
+        BodyExpectation *Equal(const std::string &bd) {
             if (this->body != bd) {
                 TestFailedReportor(
                         this->method_,
@@ -194,10 +191,10 @@ namespace vogro {
                         this->body
                 );
             }
-            return *this;
+            return this;
         }
 
-        BodyExpectation &NotEqual(const std::string &bd) {
+        BodyExpectation *NotEqual(const std::string &bd) {
             if (this->body == bd) {
                 TestFailedReportor(
                         this->method_,
@@ -208,13 +205,12 @@ namespace vogro {
                         this->body
                 );
             }
-            return *this;
+            return this;
         }
     }; // class BodyExpectation
 
     class Response : std::enable_shared_from_this<Response> {
     private:
-
         const std::string &req_method_;
         const std::string &req_path_;
         int code;
@@ -222,9 +218,7 @@ namespace vogro {
         std::string body;
 
     public:
-
-
-        Response(const std::string bd,
+        Response(std::string && bd,
                  std::map<std::string, std::string> &hdrs,
                  const std::string &req_method,
                  const std::string &req_path,
@@ -239,7 +233,6 @@ namespace vogro {
             assert(this->code == c);
             return this;
         }
-
 
         std::shared_ptr<HeaderExpectation> Header() {
             return std::make_shared<HeaderExpectation>(

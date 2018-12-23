@@ -180,9 +180,9 @@ namespace vogro {
 
             std::stringstream mybody;
             mybody << &responseBuffer;
-            std::string bodyString = mybody.str();
+//            std::string bodyString =
 
-            return std::make_shared<Response>(bodyString, resHeaders, this->method, this->requestURL, statusCode);
+            return std::make_shared<Response>(mybody.str(), resHeaders, this->method, this->requestURL, statusCode);
         }
     }; // class Request
 } // namespace vogro
