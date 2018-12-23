@@ -24,13 +24,14 @@
 
 namespace vogro {
 
-    typedef boost::asio::ssl::stream <boost::asio::ip::tcp::socket> HTTPS;
+    typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> HTTPS;
 
 
     class Server : public ServerBase<HTTPS> {
     public:
         Server(unsigned short port, size_t num_threads,
-               const std::string &cert_file, const std::string &private_key_file) : ServerBase<HTTPS>::ServerBase(port, num_threads),
+               const std::string &cert_file, const std::string &private_key_file) : ServerBase<HTTPS>::ServerBase(port,
+                                                                                                                  num_threads),
                                                                                     context(boost::asio::ssl::context::sslv23) {
             context.use_certificate_chain_file(cert_file);
             context.use_private_key_file(private_key_file, boost::asio::ssl::context::pem);

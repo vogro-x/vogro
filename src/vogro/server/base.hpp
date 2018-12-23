@@ -191,9 +191,7 @@ namespace vogro {
                 getline(stream, line);
                 line.pop_back();
 
-                if (line == "") {
-                    break;
-                }
+                if (line.empty()) break;
 
                 auto headerpair = parse_header(line);
                 req.addHeader(headerpair.first, headerpair.second);

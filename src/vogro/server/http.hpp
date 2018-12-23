@@ -28,12 +28,12 @@ namespace vogro {
 //    template <>
     class Server : public ServerBase<HTTP> {
     public:
-        Server(unsigned short port = 8080, size_t num_threads = 4)
+        explicit Server(unsigned short port = 8080, size_t num_threads = 4)
                 : ServerBase<HTTP>::ServerBase(port, num_threads) {
         }
 
     private:
-        void accept() {
+        void accept()  {
             auto socket = std::make_shared<HTTP>(io_svc);
             acceptor.async_accept(*socket, [this, socket](const boost::system::error_code &ec) {
                 accept();  //递归调用accept

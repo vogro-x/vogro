@@ -16,12 +16,6 @@
 #ifndef __VOGRO_LOGGER_HPP__
 #define __VOGRO_LOGGER_HPP__
 
-enum severity_type {
-    info = 1,
-    debug,
-    error,
-    warn,
-};
 
 #include <mutex>
 #include <cstdio>
@@ -31,209 +25,220 @@ enum severity_type {
 #include <memory>
 #include <sstream>
 #include <string>
+#include <cstring>
 #include <typeinfo>
 #include "utils.hpp"
 
-class BasePolicy {
-public:
-    virtual void open_ostream() = 0;
+namespace vogro {
 
-    virtual void close_ostream() = 0;
+    enum severity_type {
+        info = 1,
+        debug,
+        error,
+        warn,
+    };
 
-    virtual void write(const std::string &msg) = 0;
 
-    virtual ~BasePolicy(){}
-};
+    class BasePolicy {
+    public:
+        virtual void open_ostream() = 0;
 
-class FilePolicy : public BasePolicy {
-private:
-    std::string filename;
-    std::unique_ptr <std::ofstream> out_stream;
+        virtual void close_ostream() = 0;
 
-public:
-    FilePolicy(const std::string &f) : filename(f), out_stream(new std::ofstream) {
-        this->open_ostream();
-    }
+        virtual void write(const std::string &msg) = 0;
 
-    void open_ostream() override {
-        this->out_stream->open(filename,
-                               std::ofstream::out | std::ofstream::app);
-    }
+        virtual ~BasePolicy() {};
+    }; // class BasePolicy
 
-    void close_ostream() override { this->out_stream->close(); }
+    class FilePolicy : public BasePolicy {
+    private:
+        std::string filename;
+        std::unique_ptr<std::ofstream> out_stream;
 
-    void write(const std::string &msg) override {
-        *(this->out_stream) << msg << std::endl;
-    }
+    public:
+        explicit FilePolicy(const std::string &f) : filename(f), out_stream(new std::ofstream) {
+            this->open_ostream();
+        }
 
-    ~FilePolicy() { this->close_ostream(); }
-};
+        void open_ostream() override {
+            this->out_stream->open(filename,
+                                   std::ofstream::out | std::ofstream::app);
+        }
 
-class TerminalPolicy : public BasePolicy {
-public:
-    // placehold 保持接口一致
-    TerminalPolicy(std::string &placehold) {};
+        void close_ostream() override { this->out_stream->close(); }
 
-    void open_ostream() override {
-        // do nothing
-    }
+        void write(const std::string &msg) override {
+            *(this->out_stream) << msg << std::endl;
+        }
 
-    void close_ostream() override {
-        // do nothing
-    }
+        ~FilePolicy() override { this->close_ostream(); }
+    }; // class FilePolicy
 
-    void write(const std::string &msg) override {
-        std::cout << msg << std::endl;
-    }
-};
+    class TerminalPolicy : public BasePolicy {
+    public:
+        // placehold 保持接口一致
+        explicit TerminalPolicy(std::string &placehold) {};
+
+        void open_ostream() override {
+            // do nothing
+        }
+
+        void close_ostream() override {
+            // do nothing
+        }
+
+        void write(const std::string &msg) override {
+            std::cout << msg << std::endl;
+        }
+    }; //class TerminalPolicy
 
 // remaining impl
-class RemotePolicy : public BasePolicy {
-private:
-    std::string remote_host;
-    unsigned short remote_port;
+    class RemotePolicy : public BasePolicy {
+    private:
+        std::string remote_host;
+        unsigned short remote_port;
 
-public:
-    RemotePolicy(const std::string &addr) {
-        auto pos = addr.find_first_of(":");
-        this->remote_host = addr.substr(0, pos);
-        this->remote_port = atoi(addr.substr(pos + 1).c_str());
+    public:
+        explicit RemotePolicy(const std::string &addr) {
+            auto pos = addr.find_first_of(':');
+            this->remote_host = addr.substr(0, pos);
+            this->remote_port = (unsigned short) atoi(addr.substr(pos + 1).c_str());
 
-        this->open_ostream();
-    }
+            this->open_ostream();
+        }
 
-    ~RemotePolicy() { this->close_ostream(); }
+        ~RemotePolicy() override { this->close_ostream(); }
 
-    void open_ostream() override {
-        // do nothing
-    }
+        void open_ostream() override {
+            // do nothing
+        }
 
-    void close_ostream() override {
-        // do nothing
-    }
+        void close_ostream() override {
+            // do nothing
+        }
 
-    void write(const std::string &msg) override {}
-};
+        void write(const std::string &msg) override {}
+    }; //class RemotePolicy
 
 
-template<typename policy_type>
-class Logger {
-public:
-    static Logger &getLoggerInstance(std::string filename_or_addr) {
-        static Logger logger(filename_or_addr);
-        return logger;
-    }
+    template<typename policy_type>
+    class Logger {
+    public:
+        static Logger &getLoggerInstance(std::string filename_or_addr) {
+            static Logger logger(filename_or_addr);
+            return logger;
+        }
 
-    Logger(const Logger &) = delete;
+        Logger(const Logger &) = delete;
 
-    Logger &operator=(const Logger &) = delete;
+        Logger &operator=(const Logger &) = delete;
 
-    // template<typename...Args>
-    template<severity_type severity, typename... Args>
-    void PrintLog(const Args &... args) {
-        // init p and ssp only once
-        if (!p) {
-            p = std::shared_ptr<policy_type>(
-                    new policy_type(this->filename_or_addr));
-            if (typeid(TerminalPolicy) == typeid(*p)) {
-                this->is_terminal = true;
+        // template<typename...Args>
+        template<severity_type severity, typename... Args>
+        void PrintLog(const Args &... args) {
+            // init p and ssp only once
+            if (!p) {
+                p = std::shared_ptr<policy_type>(
+                        new policy_type(this->filename_or_addr));
+                if (typeid(TerminalPolicy) == typeid(*p)) {
+                    this->is_terminal = true;
+                }
             }
+            if (!ssp) {
+                ssp = std::make_shared<std::stringstream>();
+            }
+
+            write_mutex.lock();
+            (*ssp) << "[" << getCurrentTime() << "] ";
+            switch (severity) {
+                case severity_type::info:
+                    if (this->is_terminal)
+                        (*ssp) << INITCOLOR(GREEN_COLOR) << "<INFO>"
+                               << INITCOLOR(ZERO_COLOR) << ": ";  // with color
+                    else
+                        (*ssp) << "<INFO>: ";  // no color
+                    break;
+
+                case severity_type::debug:
+                    if (this->is_terminal)
+                        (*ssp) << INITCOLOR(BLUE_COLOR) << "<DEBUG>"
+                               << INITCOLOR(ZERO_COLOR) << ": ";
+                    else
+                        (*ssp) << "<DEBUG>: ";
+                    break;
+
+                case severity_type::warn:
+                    if (this->is_terminal)
+                        (*ssp) << INITCOLOR(YELLOW_COLOR) << "<WARN>"
+                               << INITCOLOR(ZERO_COLOR) << ": ";
+                    else
+                        (*ssp) << "<WARN>: ";
+                    break;
+
+                case severity_type::error:
+                    if (this->is_terminal)
+                        (*ssp) << INITCOLOR(RED_COLOR) << "<ERROR>"
+                               << INITCOLOR(ZERO_COLOR) << ": ";
+                    else
+                        (*ssp) << "<ERROR>: ";
+                    break;
+            };
+            this->print_impl(args...);
+            write_mutex.unlock();
         }
-        if (!ssp) {
-            ssp = std::shared_ptr<std::stringstream>(new std::stringstream);
+
+        template<typename... Args>
+        void LOG_INFO(const Args &... args) {
+            this->PrintLog<severity_type::info>(args...);
         }
 
-        write_mutex.lock();
-        (*ssp) << "[" << getCurrentTime() << "] ";
-        switch (severity) {
-            case severity_type::info:
-                if (this->is_terminal)
-                    (*ssp) << INITCOLOR(GREEN_COLOR) << "<INFO>"
-                           << INITCOLOR(ZERO_COLOR) << ": ";  // with color
-                else
-                    (*ssp) << "<INFO>: ";  // no color
-                break;
+        template<typename... Args>
+        void LOG_DEBUG(const Args &... args) {
+            this->PrintLog<severity_type::debug>(args...);
+        }
 
-            case severity_type::debug:
-                if (this->is_terminal)
-                    (*ssp) << INITCOLOR(BLUE_COLOR) << "<DEBUG>"
-                           << INITCOLOR(ZERO_COLOR) << ": ";
-                else
-                    (*ssp) << "<DEBUG>: ";
-                break;
+        template<typename... Args>
+        void LOG_WARN(const Args &... args) {
+            this->PrintLog<severity_type::warn>(args...);
+        }
 
-            case severity_type::warn:
-                if (this->is_terminal)
-                    (*ssp) << INITCOLOR(YELLOW_COLOR) << "<WARN>"
-                           << INITCOLOR(ZERO_COLOR) << ": ";
-                else
-                    (*ssp) << "<WARN>: ";
-                break;
+        template<typename... Args>
+        void LOG_ERROR(const Args &... args) {
+            this->PrintLog<severity_type::error>(args...);
+        }
 
-            case severity_type::error:
-                if (this->is_terminal)
-                    (*ssp) << INITCOLOR(RED_COLOR) << "<ERROR>"
-                           << INITCOLOR(ZERO_COLOR) << ": ";
-                else
-                    (*ssp) << "<ERROR>: ";
-                break;
-        };
-        this->print_impl(args...);
-        write_mutex.unlock();
-    }
+    private:
+        std::mutex write_mutex;
+        // policy_type policy;
+        std::shared_ptr<policy_type> p;
 
-    template<typename... Args>
-    void LOG_INFO(const Args &... args) {
-        this->PrintLog<severity_type::info>(args...);
-    }
+        std::string filename_or_addr;
 
-    template<typename... Args>
-    void LOG_DEBUG(const Args &... args) {
-        this->PrintLog<severity_type::debug>(args...);
-    }
+        std::shared_ptr<std::stringstream> ssp;
 
-    template<typename... Args>
-    void LOG_WARN(const Args &... args) {
-        this->PrintLog<severity_type::warn>(args...);
-    }
+        bool is_terminal = false;
 
-    template<typename... Args>
-    void LOG_ERROR(const Args &... args) {
-        this->PrintLog<severity_type::error>(args...);
-    }
+        void print_impl() {  // Recursive termination function
+            p->write(ssp->str());
+            ssp->str("");  // ssp->empty(),ssp->clear() can not clean ssp
+        }
 
-private:
-    std::mutex write_mutex;
-    // policy_type policy;
-    std::shared_ptr <policy_type> p;
+        template<typename First, typename... Rest>
+        void print_impl(const First &parm1, const Rest &... parm) {
+            (*ssp) << parm1 << " ";
+            print_impl(parm...);
+        }
 
-    std::string filename_or_addr;
+        std::string getCurrentTime() {
+            time_t t;
+            time(&t);
+            struct tm *tmp_time = localtime(&t);
+            char s[100];
+            strftime(s, sizeof(s), "%04Y/%02m/%02d %H:%M:%S", tmp_time);
+            return static_cast<std::string>(s);
+        }
 
-    std::shared_ptr <std::stringstream> ssp;
-
-    bool is_terminal = false;
-
-    void print_impl() {  // Recursive termination function
-        p->write(ssp->str());
-        ssp->str("");  // ssp->empty(),ssp->clear() can not clean ssp
-    }
-
-    template<typename First, typename... Rest>
-    void print_impl(const First &parm1, const Rest &... parm) {
-        (*ssp) << parm1 << " ";
-        print_impl(parm...);
-    }
-
-    std::string getCurrentTime() {
-        time_t t;
-        time(&t);
-        struct tm *tmp_time = localtime(&t);
-        char s[100];
-        strftime(s, sizeof(s), "%04Y/%02m/%02d %H:%M:%S", tmp_time);
-        return static_cast<std::string>(s);
-    }
-
-    Logger(std::string &f) { this->filename_or_addr = f; }
-};
-
+        explicit Logger(std::string &f) { this->filename_or_addr = f; }
+    }; // class Logger
+} // namespace vogro
 #endif
